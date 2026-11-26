@@ -199,3 +199,8 @@ insert into pt_activities (resource_id, job_external_id, job_name, job_product, 
 select resource_id, 'JOB-26050', 'Superheater Coil Final Welding & Test', 'Superheater Coil Assembly 4200 mm', 6.0, 'Op040', 'Hydrostatic Test & Final Release', 'Waiting', to_date('21-02-2027 14:26','DD-MM-YYYY HH24:MI'), to_date('21-02-2027 21:38','DD-MM-YYYY HH24:MI'), to_date('22-12-2026 00:00','DD-MM-YYYY HH24:MI'), 'Y', 0.0, 432.0, 6.0, 6.0, 0.0, 'TIG Welding, Welders', 'activities - 2026-11-26 17.27.14.xlsx'
   from pt_resources where plant_name = 'L&T MHI Power Boilers Pvt Ltd' and resource_name = 'Hydro Test Station 01';
 commit;
+-- Resource used by the PlanetTogether operations publish but not by the activities export.
+merge into pt_resources t using (select 'L&T MHI Power Boilers Pvt Ltd' plant_name, 'Welder Pool' resource_name, 'Welding' department_name from dual) s
+  on (t.plant_name = s.plant_name and t.resource_name = s.resource_name)
+  when not matched then insert (plant_name, resource_name, department_name) values (s.plant_name, s.resource_name, s.department_name);
+commit;

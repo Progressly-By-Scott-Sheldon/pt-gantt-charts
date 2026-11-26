@@ -69,34 +69,7 @@ create table if not exists pt_activities (
 create index if not exists pt_activities_res_ix on pt_activities (resource_id);
 create index if not exists pt_activities_start_ix on pt_activities (scheduled_start);
 
--- One row per activity and project, with resource and department: what the Gantt reads.
--- The project is the PT_JOBS.NOTES prefix before "_" (Project1_Job035 -> Project1), matched on
--- PT_JOBS.EXTERNALID. A job PT_JOBS links to several projects gives one row per project, so
--- ACTIVITY_ID is not unique here. Jobs not in PT_JOBS fall back to PT_JOB_PROJECTS, then product.
-create or replace view pt_activities_v as
-with pt_job_codes as (
-  select distinct externalid as job_external_id, regexp_substr(notes, '^[^_]+') as project_code
-    from pt_jobs
-   where notes is not null
-)
-select a.activity_id,
-       coalesce(jc.project_code, p.project_name, a.job_product, a.job_name, a.job_external_id) as project_name,
-       p.project_id,
-       case when jc.project_code is not null
-            then nvl(to_number(regexp_substr(jc.project_code, '\d+')), 999)
-            else 1000 + nvl(p.sort_order, 999) end as project_sort,
-       a.job_external_id, a.job_name, a.job_product, a.job_quantity,
-       a.operation_external_id, a.operation_name,
-       r.resource_id, r.resource_name, r.department_name, r.plant_name,
-       a.production_status,
-       a.scheduled_start, a.scheduled_end, a.need_date, a.is_late,
-       a.setup_minutes, a.run_minutes,
-       a.activity_quantity, a.remaining_quantity, a.percent_finished, a.bottlenecks
-  from pt_activities a
-  join pt_resources r on r.resource_id = a.resource_id
-  left join pt_job_codes jc on jc.job_external_id = a.job_external_id
-  left join pt_job_projects jp on jp.job_external_id = a.job_external_id and jc.job_external_id is null
-  left join pt_projects p on p.project_id = jp.project_id;
+-- PT_ACTIVITIES_V (what the Gantt reads) is in db/pt_gantt_view.sql: run it after the loads.
 
 -- Rows entered on page 5 (Schedule Data) have no source_file: their late flag follows the
 -- dates, the same rule PlanetTogether uses (scheduled end after need date). Exported rows

@@ -48,7 +48,7 @@
     '<div class="legend" data-r="legend"></div>' +
     '<div class="board" data-r="board"><div class="inner" data-r="inner"></div></div>' +
     '<p class="note">Bars run from Scheduled Start to Scheduled End, so they include setup and any off-shift or weekend time the activity spans. ' +
-      'A red end cap marks an activity PlanetTogether flags as late against its need date. Projects come from the PT_JOBS Notes column (Project1_Job035 shows as Project1); a job linked to several projects appears under each. Hover a project to see its jobs.</p>' +
+      'A red end cap marks an activity PlanetTogether flags as late against its need date. Jobs, projects (Notes) and products come from the PlanetTogether Jobs publish (PT_JOBS); each bar is an operation from the Operations publish (PT_JOB_OPERATIONS), labelled with its Name and External ID. An operation on two resources shows on both. Hover a project to see its jobs.</p>' +
     '<div class="tip" role="tooltip" data-r="tip"></div>';
   var $ = function (r) { return root.querySelector('[data-r="' + r + '"]'); };
   if (window.apex && apex.util && apex.util.makeApplicationUrl) $("edit").href = apex.util.makeApplicationUrl({ pageId: 5 });
@@ -140,7 +140,7 @@
   function tipOf(o) { tips.push(o); return tips.length - 1; }
   function actTip(a, resList) {
     return { t: a.opId + " · " + a.op, late: a.late, rows: [
-      ["Project", a.proj], ["Job", a.jobId + " · " + a.job], ["Product", a.product + " × " + a.qty],
+      ["Project", a.proj], ["Job", a.jobId + " · " + a.job], ["Name", a.op], ["External ID", a.opId], ["Product", a.product],
       ["Resource", resList || a.res], ["Department", a.dept], ["Start", fDT(a.s)], ["End", fDT(a.e)],
       ["Span", dur(a.e - a.s) + " (run " + P.hm(a.runMin) + " h)"], ["Need date", fDT(a.need)],
       ["Status", a.status + (a.late && a.need != null ? " · late " + dur(a.e - a.need) : a.late ? " · late" : "")]] };
@@ -181,12 +181,12 @@
         var needs = ja.map(function (a) { return a.need; }).filter(function (n) { return n != null; });
         var need = needs.length ? Math.max.apply(null, needs) : null;
         var lateBy = P.jobLateness(ja), late = ja.some(function (a) { return a.late; }), jx = scale.x(js), jw = scale.x(je) - jx;
-        var ji = tipOf({ t: j + " · " + a0.job, late: late, rows: [["Project", p], ["Product", a0.product + " × " + a0.qty], ["Start", fDT(js)], ["End", fDT(je)],
+        var ji = tipOf({ t: j + " · " + a0.job, late: late, rows: [["Project", p], ["Product", a0.product], ["Start", fDT(js)], ["End", fDT(je)],
           ["Span", dur(je - js)], ["Need date", fDT(need)], ["Status", late ? "Late by " + dur(lateBy) : need != null ? "On time, " + dur(Math.max(0, need - je)) + " float" : "On time"]] });
         out += '<div class="row j"><div class="lc"><span class="id">' + esc(j) + '</span><span class="t">' + esc(a0.job) + "</span>" +
           (lateBy > 0 ? '<span class="pill">LATE ' + dur(lateBy) + "</span>" : "") + '</div><div class="tc" style="width:' + TW + 'px">' +
           '<div class="sum ' + pc(p) + '" style="left:' + jx + "px;width:" + jw + 'px" data-i="' + ji + '" tabindex="0" aria-label="' + esc(j + " " + a0.job) + '"></div>' +
-          '<span class="bl" style="left:' + (jx + jw + 9) + 'px"><small>' + esc(a0.product) + " × " + a0.qty + (need != null ? " · need " + fD(need) : "") + "</small></span></div></div>";
+          '<span class="bl" style="left:' + (jx + jw + 9) + 'px"><small>' + esc(a0.product) + (need != null ? " · need " + fD(need) : "") + "</small></span></div></div>";
         if (state.level !== "operation") return;
         P.groupOperations(ja).forEach(function (o) {
           var a = o.a;

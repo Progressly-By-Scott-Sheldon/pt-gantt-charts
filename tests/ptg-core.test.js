@@ -1,6 +1,6 @@
 // Unit tests for the Schedule Gantt logic. Run: node --test tests/
 // Fixture: tests/fixtures/activities.json is the JSON page 4 receives from PT_ACTIVITIES_V
-// (the PlanetTogether export of 26 Nov 2026, 36 activities).
+// (PlanetTogether Jobs + Operations publish of 26 Nov 2026: 8 jobs, 56 operations).
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const P = require("../shared-components/static-files/ptg-core.js");
@@ -32,17 +32,23 @@ test("parseDuration: HH:mm:ss and d.HH:mm:ss", () => {
   assert.equal(P.parseDuration("x"), null);
 });
 
-test("dataset counts: 36 activities, each under Project1 and Project2 (PT_JOBS notes)", () => {
-  const U = P.uniqueActs(A);
-  assert.equal(A.length, 72);
-  assert.equal(U.length, 36);
-  assert.deepEqual([...new Set(A.map(a => a.proj))], ["Project1", "Project2"]);
-  assert.equal(new Set(U.map(a => a.jobId)).size, 5);
-  assert.equal(new Set(U.map(a => a.jobId + "|" + a.opId)).size, 32);
-  assert.equal(new Set(U.map(a => a.res)).size, 14);
-  assert.equal(new Set(U.filter(a => a.late).map(a => a.jobId)).size, 3);
-  const F = F0(); F.proj.add("Project1");
-  assert.equal(A.filter(a => P.pass(a, F, 3)).length, 36);
+test("dataset counts: PT_JOBS (8 jobs, 3 projects) + PT_JOB_OPERATIONS (56 operations)", () => {
+  // 7 operations run on two resources, so 56 operations give 63 rows
+  assert.equal(A.length, 63);
+  assert.equal(P.uniqueActs(A).length, 63);
+  assert.deepEqual([...new Set(A.map(a => a.proj))], ["Project 1", "Project 2", "Project 3"]);
+  assert.equal(new Set(A.map(a => a.jobId)).size, 8);
+  assert.equal(new Set(A.map(a => a.jobId + "|" + a.opId)).size, 56);
+  assert.equal(new Set(A.map(a => a.res)).size, 13);
+  assert.equal(new Set(A.filter(a => a.late).map(a => a.jobId)).size, 4);
+  assert.equal(A.filter(a => a.dept === "Other").length, 0);
+  const F = F0(); F.proj.add("Project 2");
+  assert.deepEqual(P.filterOptions(A, F, ["Project 1", "Project 2", "Project 3"]).job.map(o => o[0]).sort(), ["JOB-26054", "JOB-26074"]);
+  assert.equal(A.filter(a => P.pass(a, F, 3)).length, 18);
+  // Name = operation name, External ID = sequence, Product = ProductsList
+  const op = A.find(a => a.jobId === "JOB-26041" && a.opId === "Op010");
+  assert.equal(op.op, "Cutting");
+  assert.equal(op.product, "Boiler Header Assembly 600 NB 2");
 });
 
 test("uniqueActs keeps one row per activity id", () => {
@@ -68,12 +74,12 @@ test("cascading filters: project limits jobs; pruned selections are dropped", ()
 });
 
 test("groupOperations: one bar per operation, resources joined with +", () => {
-  const ja = A.filter(a => a.jobId === "JOB-26050" && a.proj === "Project1");
+  const ja = A.filter(a => a.jobId === "JOB-26050");
   const ops = P.groupOperations(ja);
   const tig = ops.find(o => o.opId === "Op010");
-  assert.deepEqual(tig.res.sort(), ["TIG Cell 01", "Welder 1"]);
-  assert.match(tig.label, /^(TIG Cell 01 \+ Welder 1|Welder 1 \+ TIG Cell 01)$/);
-  const U = A.filter(a => a.proj === "Project1");
+  assert.deepEqual(tig.res.sort(), ["TIG Cell 01", "Welder Pool"]);
+  assert.match(tig.label, /^(TIG Cell 01 \+ Welder Pool|Welder Pool \+ TIG Cell 01)$/);
+  const U = A;
   const all = new Set(U.map(a => a.jobId + "|" + a.opId)).size;
   const grouped = [...new Set(U.map(a => a.jobId))].reduce((n, j) => n + P.groupOperations(U.filter(a => a.jobId === j)).length, 0);
   assert.equal(grouped, all);
@@ -81,22 +87,23 @@ test("groupOperations: one bar per operation, resources joined with +", () => {
 
 test("jobLateness: latest end minus latest need, 0 when not late", () => {
   const ja = A.filter(a => a.jobId === "JOB-26041");
-  assert.equal(P.dur(P.jobLateness(ja)), "7d 10h");
+  // PlanetTogether reports 6.49 lateness days for JOB-26041 in the Jobs publish
+  assert.equal(P.dur(P.jobLateness(ja)), "6d 11h");
   assert.equal(P.jobLateness(A.filter(a => a.jobId === "JOB-26044")), 0);
   const t = Date.UTC(2026, 0, 10);
   assert.equal(P.jobLateness([{ late: true, s: t, e: t + DAY, need: t }]), DAY);
   assert.equal(P.jobLateness([{ late: false, s: t, e: t + DAY, need: t }]), 0);
 });
 
-test("makeScale: idle gaps hidden -> two breaks of 4 and 73 days", () => {
+test("makeScale: idle gaps hidden -> one break of 80 days", () => {
   const sc = P.makeScale(A, { ppd: 10, compress: true });
-  assert.equal(sc.segs.length, 3);
+  assert.equal(sc.segs.length, 2);
   const gaps = sc.segs.slice(1).map((g, i) => Math.round((g.s - sc.segs[i].e) / DAY));
-  assert.deepEqual(gaps, [4, 73]);
+  assert.deepEqual(gaps, [80]);
   sc.segs.forEach(g => { assert.equal(g.s % DAY, 0); assert.equal(g.e % DAY, 0); });
   // width = days * ppd + one 30 px break per gap
   const days = sc.segs.reduce((n, g) => n + (g.e - g.s) / DAY, 0);
-  assert.equal(sc.W, days * 10 + 2 * P.BRK);
+  assert.equal(sc.W, days * 10 + 1 * P.BRK);
   // x is monotonic and maps the first day start to 0
   assert.equal(sc.x(sc.segs[0].s), 0);
   assert.ok(sc.x(sc.segs[1].s) > sc.x(sc.segs[0].e));
