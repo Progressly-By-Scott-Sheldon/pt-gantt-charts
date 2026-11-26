@@ -70,10 +70,10 @@ create index if not exists pt_activities_res_ix on pt_activities (resource_id);
 create index if not exists pt_activities_start_ix on pt_activities (scheduled_start);
 
 -- One row per activity with its project, resource and department: what the Gantt reads.
--- Jobs without a mapping fall back to the job product as their project, as the spec asks.
+-- Jobs without a mapping fall back to their product (then job name, then Job Id) as project.
 create or replace view pt_activities_v as
 select a.activity_id,
-       nvl(p.project_name, a.job_product) as project_name,
+       coalesce(p.project_name, a.job_product, a.job_name, a.job_external_id) as project_name,
        p.project_id,
        nvl(p.sort_order, 999)             as project_sort,
        a.job_external_id, a.job_name, a.job_product, a.job_quantity,
