@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LMB Hazira Schedule Gantt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: one dense scheduling board. Sticky task column on the left, compressed time axis on the right, colour = project. */
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --ink:#191c21; --ink2:#5d6470; --line:#e2e5ea; --line2:#eef0f3; --band:#f3f4f7;
+  --accent:#1f4e79;
+  --s1:#257de0; --s2:#f47230; --s3:#00b894; --s4:#6a4ce2;
+  --crit:#c62828; --crit-bg:#fdecec;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+  --lw:290px; --rh:30px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#131519; --surface:#1b1e23; --ink:#eceef1; --ink2:#9aa1ad; --line:#30343c; --line2:#24272d; --band:#20232a;
+    --accent:#8fb8e0;
+    --s1:#338ced; --s2:#e76624; --s3:#00a888; --s4:#9887ef;
+    --crit:#ff7b7b; --crit-bg:#3a1c1c;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#131519; --surface:#1b1e23; --ink:#eceef1; --ink2:#9aa1ad; --line:#30343c; --line2:#24272d; --band:#20232a;
+  --accent:#8fb8e0;
+  --s1:#338ced; --s2:#e76624; --s3:#00a888; --s4:#9887ef;
+  --crit:#ff7b7b; --crit-bg:#3a1c1c;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.4 var(--font);padding:20px 20px 32px}
+h1{font:600 22px/1.2 var(--cond);margin:0;letter-spacing:.01em;text-wrap:balance}
+.sub{color:var(--ink2);margin:4px 0 0;font-size:13px}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;margin:14px 0 14px;font-variant-numeric:tabular-nums}
+.stats div{font-size:13px;color:var(--ink2)}
+.stats b{font:600 18px var(--cond);color:var(--ink);margin-right:5px}
+.stats .crit b{color:var(--crit)}
+.bar-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin-bottom:10px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;color:var(--ink2);font:500 13px var(--font);padding:7px 13px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 13px var(--font);padding:6px 11px;border-radius:7px;cursor:pointer}
+.btn:hover,.seg button:hover{filter:brightness(.97)}
+button:focus-visible,.bar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+label.chk{display:inline-flex;gap:6px;align-items:center;font-size:13px;color:var(--ink2);cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.chip{display:inline-flex;align-items:center;gap:7px;color:var(--ink);font:500 12.5px var(--font);margin-right:8px}
+.chip.off{opacity:.35}
+.flab{font-size:12.5px;color:var(--ink2)}
+.dd{position:relative}
+.dd summary{list-style:none;cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:6px 28px 6px 11px;font:500 13px var(--font);min-width:150px;position:relative;white-space:nowrap}
+.dd summary::-webkit-details-marker{display:none}
+.dd summary:after{content:"▾";position:absolute;right:10px;color:var(--ink2)}
+.dd summary.on{border-color:var(--accent);color:var(--accent)}
+.dd summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dd .menu{position:absolute;z-index:15;top:calc(100% + 4px);left:0;min-width:100%;max-height:300px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:6px}
+.dd .menu label{display:flex;gap:8px;align-items:center;padding:5px 8px;border-radius:5px;white-space:nowrap;font-size:13px;cursor:pointer}
+.dd .menu label:hover{background:var(--band)}
+.sw{width:14px;height:10px;border-radius:3px;flex:none}
+.key{font-size:12px;color:var(--ink2);display:inline-flex;align-items:center;gap:6px;margin-left:6px}
+.key i{display:inline-block;width:18px;height:10px;border-radius:3px;background:var(--ink2);border-right:4px solid var(--crit)}
+.c1{background:var(--s1)}.c2{background:var(--s2)}.c3{background:var(--s3)}
+.c4{background:var(--s4);background-image:repeating-linear-gradient(135deg,transparent 0 4px,rgba(255,255,255,.38) 4px 6px)}
+
+.board{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:78vh;position:relative}
+.inner{position:relative;min-width:100%}
+.grid{position:absolute;top:0;bottom:0;left:var(--lw);pointer-events:none;z-index:0}
+.grid .d{position:absolute;top:0;bottom:0;border-left:1px solid var(--line2)}
+.grid .d.wk{background:var(--band)}
+.grid .hr{position:absolute;top:0;bottom:0;border-left:1px dotted var(--line2)}
+.grid .brk,.hd .brk{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(135deg,var(--band) 0 5px,var(--line) 5px 6px)}
+.hd{position:sticky;top:0;z-index:5;display:flex;background:var(--surface);border-bottom:1px solid var(--line)}
+.hd .lc{z-index:6;font:600 12px var(--cond);color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;align-items:flex-end;padding-bottom:6px}
+.hd .tc{position:relative}
+.hd .m,.hd .dy,.hd .h{position:absolute;white-space:nowrap;overflow:hidden;font-family:var(--cond);font-variant-numeric:tabular-nums}
+.hd .m{top:0;height:22px;line-height:22px;font-weight:600;font-size:12px;padding-left:6px;border-left:1px solid var(--line)}
+.hd .dy{top:22px;height:22px;line-height:22px;font-size:12px;color:var(--ink2);padding-left:5px;border-left:1px solid var(--line2);font-weight:500}
+.hd .dy.ov{overflow:visible}
+.hd .h{top:44px;height:18px;line-height:18px;font-size:10.5px;color:var(--ink2);padding-left:3px}
+.hd .brk{font:600 10px var(--cond);color:var(--ink2);display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl}
+.row{display:flex;height:var(--rh);border-bottom:1px solid var(--line2);position:relative}
+.lc{position:sticky;left:0;z-index:3;flex:none;width:var(--lw);background:var(--surface);border-right:1px solid var(--line);display:flex;align-items:center;gap:6px;padding:0 10px;white-space:nowrap;overflow:hidden}
+.lc .t{overflow:hidden;text-overflow:ellipsis}
+.lc .id{font-family:var(--cond);color:var(--ink2);font-weight:500;font-variant-numeric:tabular-nums}
+.row.p .lc{font-weight:600;background:var(--band)}
+.row.p{background:color-mix(in srgb,var(--band) 60%,transparent)}
+.row.j .lc{padding-left:26px;font-weight:500}
+.row.o .lc{padding-left:52px;font-size:13px}
+.row.r .lc{padding-left:24px;font-size:13px}
+.pill{flex:none;margin-left:auto;font:600 10.5px var(--cond);color:var(--crit);background:var(--crit-bg);border-radius:4px;padding:1px 6px;font-variant-numeric:tabular-nums}
+.tc{position:relative;flex:none;z-index:1}
+.bar{position:absolute;top:7px;height:16px;border-radius:4px;cursor:pointer;min-width:3px}
+.bar.late{border-right:4px solid var(--crit)}
+.bar:hover{filter:brightness(1.1)}
+.sum{position:absolute;top:11px;height:8px;border-radius:2px;opacity:.38;cursor:pointer}
+.psum{position:absolute;top:10px;height:6px;background:var(--ink);border-radius:1px;cursor:pointer}
+.psum:before,.psum:after{content:"";position:absolute;top:0;width:2px;height:12px;background:var(--ink)}
+.psum:before{left:0}.psum:after{right:0}
+.bl{position:absolute;top:0;height:var(--rh);line-height:var(--rh);font:500 12px/var(--rh) var(--cond);color:var(--ink);white-space:nowrap;pointer-events:none}
+.bl.in{color:#fff;overflow:hidden;text-shadow:0 0 2px rgba(0,0,0,.45)}
+.bl small{color:var(--ink2);font-size:11.5px;font-weight:500}
+#tip{position:fixed;z-index:20;max-width:330px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.18);padding:10px 12px;font-size:12.5px;pointer-events:none;display:none}
+#tip h4{margin:0 0 6px;font:600 14px var(--cond)}
+#tip dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0}
+#tip dt{color:var(--ink2)}#tip dd{margin:0;font-variant-numeric:tabular-nums}
+#tip .lt{color:var(--crit);font-weight:600}
+.tblwrap{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:78vh}
+table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line2);white-space:nowrap}
+th{position:sticky;top:0;background:var(--surface);font:600 11.5px var(--cond);text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);border-bottom:1px solid var(--line)}
+td .sw{display:inline-block;margin-right:7px}
+td.lt{color:var(--crit);font-weight:600}
+.note{color:var(--ink2);font-size:12.5px;margin:12px 2px 0;max-width:95ch}
+@media (max-width:640px){:root{--lw:168px} body{padding:14px} .row.o .lc{padding-left:30px}.row.j .lc,.row.r .lc{padding-left:16px}}
+</style>
+</head>
+<body>
+<h1>Production schedule Gantt</h1>
+<p class="sub" id="sub"></p>
+<div class="stats" id="stats"></div>
+
+<div class="bar-row">
+  <div class="seg" role="group" aria-label="View">
+    <button id="v-project" aria-pressed="true">By project</button>
+    <button id="v-resource" aria-pressed="false">By resource</button>
+    <button id="v-table" aria-pressed="false">Table</button>
+  </div>
+  <span id="ganttctl" style="display:contents">
+    <div class="seg" role="group" aria-label="Zoom">
+      <button id="z-out" title="Zoom out">−</button>
+      <button id="z-fit">Fit</button>
+      <button id="z-in" title="Zoom in">+</button>
+    </div>
+    <label class="chk"><input type="checkbox" id="compress" checked> Hide idle gaps</label>
+    <span id="lvlwrap" style="display:contents"><span class="flab">Show down to</span>
+    <div class="seg" role="group" aria-label="Detail level">
+      <button id="l-project">Project</button>
+      <button id="l-job">Job</button>
+      <button id="l-operation">Operation</button>
+    </div></span>
+  </span>
+</div>
+<div class="bar-row" id="filters">
+  <span class="flab">Filter</span>
+  <details class="dd" data-f="proj"><summary></summary><div class="menu"></div></details>
+  <details class="dd" data-f="job"><summary></summary><div class="menu"></div></details>
+  <details class="dd" data-f="op"><summary></summary><div class="menu"></div></details>
+  <button class="btn" id="f-clear">Clear filters</button>
+  <span class="flab" id="f-count"></span>
+</div>
+<div class="legend" id="legend"></div>
+
+<div class="board" id="board"><div class="inner" id="inner"></div></div>
+<div class="tblwrap" id="tblwrap" hidden></div>
+<p class="note">Bars run from Scheduled Start to Scheduled End, so they include setup and any off-shift or weekend time the activity spans. A red end cap marks an activity the export flags as late against its need date. Projects are not a column in the export: jobs are grouped by product family, with the two Superheater Coil jobs under one project.</p>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const DATA = {"plant": "L&T MHI Power Boilers Pvt Ltd", "acts": [{"proj": "Boiler Header Assembly", "job": "Header Assembly", "jobId": "JOB-26041", "product": "Boiler Header Assembly 600 NB", "qty": 2.0, "op": "Cutting", "opId": "Op010", "dept": "Plate, Tube & Pipe Cutting", "res": "CNC Tube/Plate/Sheet Cutter 01", "status": "Ready", "s": 1795075200000, "e": 1795087800000, "need": 1794836880000, "late": true, "setup": "00:30:00", "run": "03:00:00"}, {"proj": "Boiler Piping Spool", "job": "Boiler Piping Spool", "jobId": "JOB-26044", "product": "Boiler Piping Spool 350 NB", "qty": 12.0, "op": "Cutting", "opId": "Op010", "dept": "Plate, Tube & Pipe Cutting", "res": "CNC Tube/Plate/Sheet Cutter 02", "status": "Ready", "s": 1795075200000, "e": 1795087800000, "need": 1796746320000, "late": false, "setup": "00:30:00", "run": "03:00:00"}, {"proj": "Boiler Header Assembly", "job": "Header Assembly", "jobId": "JOB-26041", "product": "Boiler Header Assembly 600 NB", "qty": 2.0, "op": "Bending", "opId": "Op020", "dept": "Bending & Forming", "res": "CNC Tube Bender 01", "status": "Waiting", "s": 1795087800000, "e": 1795105440000, "need": 1794852720000, "late": true, "setup": "00:30:00", "run": "04:24:00"}, {"proj": "Boiler Piping Spool", "job": "Boiler Piping Spool", "jobId": "JOB-26044", "product": "Boiler Piping Spool 350 NB", "qty": 12.0, "op": "Bending", "opId": "Op020", "dept": "Bending & Forming", "res": "CNC Tube Bender 02", "status": "Waiting", "s": 1795087800000, "e": 1795104720000, "need": 1796811840000, "late": false, "setup": "00:30:00", "run": "04:12:00"}, {"proj": "Boiler Piping Spool", "job": "Boiler Piping Spool", "jobId": "JOB-26044", "product": "Boiler Piping Spool 350 NB", "qty": 12.0, "op": "Fit-up", "opId": "Op030", "dept": "Fit-up & Assembly", "res": "Fit-up Bay 01", "status": "Waiting", "s": 1795104720000, "e": 1795176360000, "need": 1796831280000, "late": false, "setup": "00:30:00", "run": "05:24:00"}, {"proj": "Boiler Header Assembly", "job": "Header Assembly", "jobId": "JOB-26041", "product": "Boiler Header Assembly 600 NB", "qty": 2.0, "op": "Fit-up", "opId": "Op030", "dept": "Fit-up & Assembly", "res": "Fit-up Bay 02", "status": "Waiting", "s": 1795105440000, "e": 1795176720000, "need": 1794870000000, "late": true, "setup": "01:00:00", "run": "04:48:00"}, {"proj": "Boiler Piping Spool", "job": "Boiler Piping Spool", "jobId": "JOB-26044", "product": "Boiler Piping Spool 350 NB", "qty": 12.0, "op": "Welding - TIG", "opId": "Op040", "dept": "Welding", "res": "Welder 1", "status": "Waiting", "s": 1795176360000, "e": 1795421160000, "need": 1796903280000, "late": false, "setup": "00:00:00", "run": "12:00:00"}, {"proj": "Boiler Piping Spool", "job": "Boiler Piping Spool", "jobId": "JOB-26044", "product": "Boiler Piping Spool 350 NB", "qty": 12.0, "op": "Welding - TIG", "opId": "Op040", "dept": "Welding", "res": "TIG Cell 01", "status": "Waiting", "s": 1795176360000, "e": 1795421160000, "need": 1796903280000, "late": false, "setup": "00:00:00", "run": "12:00:00"}, {"proj": "Boiler Header Assembly", "job": "Header Assembly", "jobId": "JOB-26041", "product": "Boiler Header Assembly 600 NB", "qty": 2.0, "op": "Welding - SAW", "opId": "Op040", "dept": "Welding", "res": "SAW Cell 01", "status": "Waiting", "s": 1795176720000, "e": 1795423320000, "need": 1794916800000, "late": true, "setup": "00:00:00", "run": "13:00:00"}, {"proj": "Boiler Header Assembly", "job": "Header Assembly", "jobId": "JOB-26041", "product": "Boiler Header Assembly 600 NB", "qty": 2.0, "op": "Welding - SAW", "opId": "Op040", "dept": "Welding", "res": "Welder 2", "status": "Waiting", "s": 1795176720000, "e": 1795423320000, "need": 1794916800000, "late": true, "setup": "00:00:00", "run": "13:00:00"}, {"proj": "Boiler Piping Spool", "job": "Boiler Piping Spool", "jobId": "JOB-26044", "product": "Boiler Piping Spool 350 NB", "qty": 12.0, "op": "NDT / RT", "opId": "Op050", "dept": "NDT / Radiography", "res": "RT / NDT Inspection Bay 01", "status": "Waiting", "s": 1795421160000, "e": 1795430700000, "need": 1796911920000, "late": false, "setup": "00:15:00", "run": "02:24:00"}, {"proj": "Boiler Header Assembly", "job": "Header Assembly", "jobId": "JOB-26041", "product": "Boiler Header Assembly 600 NB", "qty": 2.0, "op": "NDT / RT", "opId": "Op050", "dept": "NDT / Radiography", "res": "RT / NDT Inspection Bay 01", "status": "Waiting", "s": 1795430700000, "e": 1795440060000, "need": 1794926160000, "late": true, "setup": "00:00:00", "run": "02:36:00"}, {"proj": "Boiler Piping Spool", "job": "Boiler Piping Spool", "jobId": "JOB-26044", "product": "Boiler Piping Spool 350 NB", "qty": 12.0, "op": "PWHT / Heat Treatment", "opId": "Op060", "dept": "Heat Treatment", "res": "PWHT Furnace 01", "status": "Waiting", "s": 1795430700000, "e": 1795517460000, "need": 1796996880000, "late": false, "setup": "00:30:00", "run": "09:36:00"}, {"proj": "Boiler Header Assembly", "job": "Header Assembly", "jobId": "JOB-26041", "product": "Boiler Header Assembly 600 NB", "qty": 2.0, "op": "PWHT / Heat Treatment", "opId": "Op060", "dept": "Heat Treatment", "res": "PWHT Furnace 01", "status": "Waiting", "s": 1795517460000, "e": 1795539060000, "need": 1794947760000, "late": true, "setup": "00:00:00", "run": "06:00:00"}, {"proj": "Boiler Piping Spool", "job": "Boiler Piping Spool", "jobId": "JOB-26044", "product": "Boiler Piping Spool 350 NB", "qty": 12.0, "op": "Hydro Test", "opId": "Op070", "dept": "Hydrostatic Testing", "res": "Hydro Test Station 01", "status": "Waiting", "s": 1795517460000, "e": 1795530060000, "need": 1797007680000, "late": false, "setup": "00:30:00", "run": "03:00:00"}, {"proj": "Boiler Piping Spool", "job": "Boiler Piping Spool", "jobId": "JOB-26044", "product": "Boiler Piping Spool 350 NB", "qty": 12.0, "op": "Final Inspection & Dispatch", "opId": "Op080", "dept": "Final Inspection & Dispatch", "res": "Final Inspection & Dispatch Bay 01", "status": "Waiting", "s": 1795530060000, "e": 1795597080000, "need": 1797033600000, "late": false, "setup": "00:15:00", "run": "01:12:00"}, {"proj": "Boiler Header Assembly", "job": "Header Assembly", "jobId": "JOB-26041", "product": "Boiler Header Assembly 600 NB", "qty": 2.0, "op": "Hydro Test", "opId": "Op070", "dept": "Hydrostatic Testing", "res": "Hydro Test Station 01", "status": "Waiting", "s": 1795539060000, "e": 1795598100000, "need": 1794956400000, "late": true, "setup": "00:00:00", "run": "02:24:00"}, {"proj": "Boiler Header Assembly", "job": "Header Assembly", "jobId": "JOB-26041", "product": "Boiler Header Assembly 600 NB", "qty": 2.0, "op": "Final Inspection & Dispatch", "opId": "Op080", "dept": "Final Inspection & Dispatch", "res": "Final Inspection & Dispatch Bay 01", "status": "Waiting", "s": 1795598100000, "e": 1795601700000, "need": 1794960000000, "late": true, "setup": "00:00:00", "run": "01:00:00"}, {"proj": "Membrane Waterwall Panel", "job": "Membrane Waterfall Panel", "jobId": "JOB-26042", "product": "Membrane Waterwall Panel 5000 mm", "qty": 8.0, "op": "Cutting", "opId": "Op010", "dept": "Plate, Tube & Pipe Cutting", "res": "CNC Tube/Plate/Sheet Cutter 01", "status": "Waiting", "s": 1796037480000, "e": 1796050440000, "need": 1796650560000, "late": false, "setup": "00:00:00", "run": "03:36:00"}, {"proj": "Membrane Waterwall Panel", "job": "Membrane Waterfall Panel", "jobId": "JOB-26042", "product": "Membrane Waterwall Panel 5000 mm", "qty": 8.0, "op": "Bending", "opId": "Op020", "dept": "Bending & Forming", "res": "CNC Tube Bender 01", "status": "Waiting", "s": 1796050440000, "e": 1796123880000, "need": 1796724000000, "late": false, "setup": "00:00:00", "run": "06:24:00"}, {"proj": "Membrane Waterwall Panel", "job": "Membrane Waterfall Panel", "jobId": "JOB-26042", "product": "Membrane Waterwall Panel 5000 mm", "qty": 8.0, "op": "Fit-up", "opId": "Op030", "dept": "Fit-up & Assembly", "res": "Fit-up Bay 01", "status": "Waiting", "s": 1796123880000, "e": 1796203080000, "need": 1796803200000, "late": false, "setup": "00:00:00", "run": "08:00:00"}, {"proj": "Membrane Waterwall Panel", "job": "Membrane Waterfall Panel", "jobId": "JOB-26042", "product": "Membrane Waterwall Panel 5000 mm", "qty": 8.0, "op": "Welding - TIG", "opId": "Op040", "dept": "Welding", "res": "Welder 1", "status": "Waiting", "s": 1796203080000, "e": 1796285160000, "need": 1796834880000, "late": false, "setup": "00:00:00", "run": "17:36:00"}, {"proj": "Membrane Waterwall Panel", "job": "Membrane Waterfall Panel", "jobId": "JOB-26042", "product": "Membrane Waterwall Panel 5000 mm", "qty": 8.0, "op": "Welding - TIG", "opId": "Op040", "dept": "Welding", "res": "TIG Cell 01", "status": "Waiting", "s": 1796203080000, "e": 1796285160000, "need": 1796834880000, "late": false, "setup": "00:00:00", "run": "17:36:00"}, {"proj": "Membrane Waterwall Panel", "job": "Membrane Waterfall Panel", "jobId": "JOB-26042", "product": "Membrane Waterwall Panel 5000 mm", "qty": 8.0, "op": "NDT / RT", "opId": "Op050", "dept": "NDT / Radiography", "res": "RT / NDT Inspection Bay 01", "status": "Waiting", "s": 1796285160000, "e": 1796298120000, "need": 1796898240000, "late": false, "setup": "00:00:00", "run": "03:36:00"}, {"proj": "Membrane Waterwall Panel", "job": "Membrane Waterfall Panel", "jobId": "JOB-26042", "product": "Membrane Waterwall Panel 5000 mm", "qty": 8.0, "op": "PWHT / Heat Treatment", "opId": "Op060", "dept": "Heat Treatment", "res": "PWHT Furnace 01", "status": "Waiting", "s": 1796298120000, "e": 1796391720000, "need": 1796991840000, "late": false, "setup": "00:00:00", "run": "12:00:00"}, {"proj": "Membrane Waterwall Panel", "job": "Membrane Waterfall Panel", "jobId": "JOB-26042", "product": "Membrane Waterwall Panel 5000 mm", "qty": 8.0, "op": "Hydro Test", "opId": "Op070", "dept": "Hydrostatic Testing", "res": "Hydro Test Station 01", "status": "Waiting", "s": 1796391720000, "e": 1796406120000, "need": 1797006240000, "late": false, "setup": "00:00:00", "run": "04:00:00"}, {"proj": "Membrane Waterwall Panel", "job": "Membrane Waterfall Panel", "jobId": "JOB-26042", "product": "Membrane Waterwall Panel 5000 mm", "qty": 8.0, "op": "Final Inspection & Dispatch", "opId": "Op080", "dept": "Final Inspection & Dispatch", "res": "Final Inspection & Dispatch Bay 01", "status": "Waiting", "s": 1796406120000, "e": 1796635080000, "need": 1797206400000, "late": false, "setup": "00:00:00", "run": "01:36:00"}, {"proj": "Superheater Coil", "job": "Superheater Coil Bent Tube Subassembly (SFG)", "jobId": "JOB-26049", "product": "Superheater Coil - Bent Tube Subassembly", "qty": 6.0, "op": "Cut Superheater Tube Lengths", "opId": "Op010", "dept": "Plate, Tube & Pipe Cutting", "res": "CNC Tube/Plate/Sheet Cutter 01", "status": "Ready", "s": 1803037020000, "e": 1803045660000, "need": 1796910120000, "late": true, "setup": "00:00:00", "run": "02:24:00"}, {"proj": "Superheater Coil", "job": "Superheater Coil Final Welding & Test", "jobId": "JOB-26050", "product": "Superheater Coil Assembly 4200 mm", "qty": 6.0, "op": "TIG Connection Welding", "opId": "Op010", "dept": "Welding", "res": "Welder 1", "status": "Ready", "s": 1803037020000, "e": 1803129240000, "need": 1797435360000, "late": true, "setup": "01:00:00", "run": "1.06:00:00"}, {"proj": "Superheater Coil", "job": "Superheater Coil Final Welding & Test", "jobId": "JOB-26050", "product": "Superheater Coil Assembly 4200 mm", "qty": 6.0, "op": "TIG Connection Welding", "opId": "Op010", "dept": "Welding", "res": "TIG Cell 01", "status": "Ready", "s": 1803037020000, "e": 1803129240000, "need": 1797435360000, "late": true, "setup": "01:00:00", "run": "1.06:00:00"}, {"proj": "Superheater Coil", "job": "Superheater Coil Bent Tube Subassembly (SFG)", "jobId": "JOB-26049", "product": "Superheater Coil - Bent Tube Subassembly", "qty": 6.0, "op": "Tube End Preparation / Beveling", "opId": "Op020", "dept": "Plate, Tube & Pipe Cutting", "res": "CNC Tube/Plate/Sheet Cutter 01", "status": "Waiting", "s": 1803045660000, "e": 1803052140000, "need": 1796916600000, "late": true, "setup": "00:00:00", "run": "01:48:00"}, {"proj": "Superheater Coil", "job": "Superheater Coil Bent Tube Subassembly (SFG)", "jobId": "JOB-26049", "product": "Superheater Coil - Bent Tube Subassembly", "qty": 6.0, "op": "Serpentine Tube Bending", "opId": "Op030", "dept": "Bending & Forming", "res": "CNC Tube Bender 01", "status": "Waiting", "s": 1803052140000, "e": 1803106140000, "need": 1797244200000, "late": true, "setup": "00:00:00", "run": "15:00:00"}, {"proj": "Superheater Coil", "job": "Superheater Coil Bent Tube Subassembly (SFG)", "jobId": "JOB-26049", "product": "Superheater Coil - Bent Tube Subassembly", "qty": 6.0, "op": "Coil Geometry / Fixture Fit-up", "opId": "Op040", "dept": "Fit-up & Assembly", "res": "Fit-up Bay 01", "status": "Waiting", "s": 1803106140000, "e": 1803133140000, "need": 1797292800000, "late": true, "setup": "00:00:00", "run": "07:30:00"}, {"proj": "Superheater Coil", "job": "Superheater Coil Final Welding & Test", "jobId": "JOB-26050", "product": "Superheater Coil Assembly 4200 mm", "qty": 6.0, "op": "NDT / RT Inspection", "opId": "Op020", "dept": "NDT / Radiography", "res": "RT / NDT Inspection Bay 01", "status": "Waiting", "s": 1803129240000, "e": 1803155160000, "need": 1797511680000, "late": true, "setup": "00:00:00", "run": "07:12:00"}, {"proj": "Superheater Coil", "job": "Superheater Coil Final Welding & Test", "jobId": "JOB-26050", "product": "Superheater Coil Assembly 4200 mm", "qty": 6.0, "op": "PWHT / Heat Treatment", "opId": "Op030", "dept": "Heat Treatment", "res": "PWHT Furnace 01", "status": "Waiting", "s": 1803155160000, "e": 1803219960000, "need": 1797850080000, "late": true, "setup": "00:00:00", "run": "18:00:00"}, {"proj": "Superheater Coil", "job": "Superheater Coil Final Welding & Test", "jobId": "JOB-26050", "product": "Superheater Coil Assembly 4200 mm", "qty": 6.0, "op": "Hydrostatic Test & Final Release", "opId": "Op040", "dept": "Hydrostatic Testing", "res": "Hydro Test Station 01", "status": "Waiting", "s": 1803219960000, "e": 1803245880000, "need": 1797897600000, "late": true, "setup": "00:00:00", "run": "07:12:00"}]};
+const A = DATA.acts, DAY = 864e5, HR = 36e5, BRK = 30;
+const $ = s => document.querySelector(s);
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"], DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const p2 = n => String(n).padStart(2,"0");
+const fD = t => { const d = new Date(t); return d.getUTCDate()+" "+MON[d.getUTCMonth()]; };
+const fDT = t => { const d = new Date(t); return fD(t)+(d.getUTCFullYear()!==2026?" "+d.getUTCFullYear():"")+" "+p2(d.getUTCHours())+":"+p2(d.getUTCMinutes()); };
+const fDY = t => fD(t)+" "+new Date(t).getUTCFullYear();
+const dur = ms => { const m = Math.round(ms/6e4), d = Math.floor(m/1440), h = Math.floor(m%1440/60), mm = m%60; return d ? d+"d "+h+"h" : h ? h+"h"+(mm?" "+mm+"m":"") : mm+"m"; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+const PROJECTS = [...new Set(A.map(a => a.proj))];
+const pc = p => "c"+(PROJECTS.indexOf(p)+1);
+const state = { view:"project", ppd:150, compress:true, level:"operation" };
+const F = { proj:new Set(), job:new Set(), op:new Set() };
+const FL = { proj:["All projects","projects"], job:["All jobs","jobs"], op:["All operations","operations"] };
+const uniq = a => [...new Set(a)];
+const pass = (a,n) => (!F.proj.size || F.proj.has(a.proj)) && (n < 2 || !F.job.size || F.job.has(a.jobId)) && (n < 3 || !F.op.size || F.op.has(a.op));
+const visible = () => A.filter(a => pass(a,3));
+/* cascading options: jobs depend on the project filter, operations on project + job */
+function filterOptions(){
+  const jobs = uniq(A.filter(a => pass(a,1)).map(a => a.jobId)); F.job.forEach(j => jobs.includes(j) || F.job.delete(j));
+  const ops = uniq(A.filter(a => pass(a,2)).map(a => a.op)); F.op.forEach(o => ops.includes(o) || F.op.delete(o));
+  return { proj:PROJECTS.map(p => [p,p]), job:jobs.map(j => [j, j+" · "+A.find(a => a.jobId===j).job]), op:ops.map(o => [o,o]) };
+}
+function buildFilters(){
+  const opt = filterOptions();
+  document.querySelectorAll("#filters .dd").forEach(d => {
+    const k = d.dataset.f, set = F[k], sm = d.querySelector("summary");
+    sm.textContent = !set.size ? FL[k][0] : set.size === 1 ? opt[k].find(o => o[0] === [...set][0])[1] : set.size+" "+FL[k][1];
+    sm.classList.toggle("on", set.size > 0);
+    d.querySelector(".menu").innerHTML = opt[k].map(([v,l],i) => `<label for="f-${k}-${i}"><input type="checkbox" id="f-${k}-${i}" value="${esc(v)}"${set.has(v)?" checked":""}>${esc(l)}</label>`).join("");
+  });
+  const n = visible().length; $("#f-count").textContent = n === A.length ? "" : n+" of "+A.length+" activities shown";
+  $("#f-clear").hidden = !(F.proj.size || F.job.size || F.op.size);
+}
+let tips = [], scale;
+
+/* ---- header numbers ---- */
+(function(){
+  const jobs = [...new Set(A.map(a => a.jobId))], res = [...new Set(A.map(a => a.res))];
+  const ops = new Set(A.map(a => a.jobId+a.opId)).size;
+  const lateJobs = new Set(A.filter(a => a.late).map(a => a.jobId)).size;
+  const s = Math.min(...A.map(a => a.s)), e = Math.max(...A.map(a => a.e));
+  $("#sub").textContent = DATA.plant+" · scheduled "+fDY(s)+" to "+fDY(e)+" · export of 26 Nov 2026";
+  $("#stats").innerHTML = `<div><b>${PROJECTS.length}</b>projects</div><div><b>${jobs.length}</b>jobs</div><div><b>${ops}</b>operations</div><div><b>${A.length}</b>resource activities</div><div><b>${res.length}</b>resources</div><div class="crit"><b>${lateJobs}</b>jobs late against need date</div>`;
+})();
+
+function legend(){
+  const on = new Set(visible().map(a => a.proj));
+  $("#legend").innerHTML = PROJECTS.map(p => `<span class="chip${on.has(p)?"":" off"}"><span class="sw ${pc(p)}"></span>${esc(p)}</span>`).join("") + `<span class="key"><i></i>late against need date</span>`;
+}
+
+/* ---- time scale with collapsed idle gaps ---- */
+function makeScale(acts){
+  const iv = acts.map(a => [a.s,a.e]).sort((x,y) => x[0]-y[0]);
+  let segs = [];
+  if (!iv.length) return {segs:[], W:0, x:()=>0};
+  if (state.compress){
+    let cur = iv[0].slice();
+    for (const [s,e] of iv.slice(1)){ if (s - cur[1] < 36*HR) cur[1] = Math.max(cur[1],e); else { segs.push(cur); cur = [s,e]; } }
+    segs.push(cur);
+    segs = segs.map(([s,e]) => [Math.floor(s/DAY)*DAY, Math.ceil(e/DAY)*DAY]);
+    const m = [segs[0]];
+    for (const s of segs.slice(1)){ const l = m[m.length-1]; if (s[0] <= l[1]) l[1] = Math.max(l[1],s[1]); else m.push(s); }
+    segs = m;
+  } else segs = [[Math.floor(iv[0][0]/DAY)*DAY, Math.ceil(Math.max(...iv.map(i => i[1]))/DAY)*DAY]];
+  let x0 = 0;
+  segs = segs.map(([s,e],i) => { const o = {s,e,x0,w:(e-s)/DAY*state.ppd}; x0 += o.w + (i < segs.length-1 ? BRK : 0); return o; });
+  const x = t => { for (const g of segs){ if (t < g.s) return g.x0 - BRK/2; if (t <= g.e) return g.x0 + (t-g.s)/DAY*state.ppd; } return x0; };
+  return {segs, W:x0, x};
+}
+function totalDays(acts){ const k = state.ppd; state.ppd = 1; const w = makeScale(acts); state.ppd = k; return {days:w.segs.reduce((n,g) => n+(g.e-g.s)/DAY,0), breaks:w.segs.length-1}; }
+
+function header(){
+  const {segs} = scale, ppd = state.ppd; let h = "", g = "";
+  const hours = ppd >= 320, hstep = ppd >= 1000 ? 2 : ppd >= 560 ? 4 : 6;
+  segs.forEach((sg,i) => {
+    let mStart = sg.s;
+    for (let d = sg.s; d < sg.e; d += DAY){
+      const dt = new Date(d), x = sg.x0 + (d-sg.s)/DAY*ppd, dow = dt.getUTCDay(), wk = dow===0||dow===6;
+      const nxt = new Date(d+DAY);
+      if (d+DAY >= sg.e || nxt.getUTCMonth() !== dt.getUTCMonth()){
+        const mx = sg.x0 + (mStart-sg.s)/DAY*ppd;
+        h += `<div class="m" style="left:${mx}px;width:${x+ppd-mx}px">${MON[dt.getUTCMonth()]} ${dt.getUTCFullYear()}</div>`; mStart = d+DAY;
+      }
+      let lab = "", ov = "";
+      if (ppd >= 92) lab = DOW[dow]+" "+dt.getUTCDate()+" "+MON[dt.getUTCMonth()];
+      else if (ppd >= 46) lab = dt.getUTCDate()+" "+DOW[dow][0];
+      else if (ppd >= 20) lab = dt.getUTCDate();
+      else if (dow === 1){ lab = dt.getUTCDate(); ov = " ov"; }
+      h += `<div class="dy${ov}" style="left:${x}px;width:${ppd}px">${lab}</div>`;
+      g += `<div class="d${wk?" wk":""}" style="left:${x}px;width:${ppd}px"></div>`;
+      if (ppd >= 160) for (let k = hstep; k < 24; k += hstep){
+        const hx = x + k/24*ppd; g += `<div class="hr" style="left:${hx}px"></div>`;
+        if (hours) h += `<div class="h" style="left:${hx}px">${p2(k)}:00</div>`;
+      }
+    }
+    if (i < segs.length-1){
+      const bx = sg.x0+sg.w, gap = Math.round((segs[i+1].s - sg.e)/DAY);
+      h += `<div class="brk" style="left:${bx}px;width:${BRK}px" title="${gap} idle days hidden">${gap}d</div>`;
+      g += `<div class="brk" style="left:${bx}px;width:${BRK}px"></div>`;
+    }
+  });
+  return {h, g, hh: hours ? 62 : 44};
+}
+
+function tipOf(o){ tips.push(o); return tips.length-1; }
+function actTip(a, resList){
+  return {t:a.opId+" · "+a.op, late:a.late, rows:[["Project",a.proj],["Job",a.jobId+" · "+a.job],["Product",a.product+" × "+a.qty],["Resource",resList||a.res],["Department",a.dept],["Start",fDT(a.s)],["End",fDT(a.e)],["Span",dur(a.e-a.s)+" (run "+a.run.replace(/^(\d+)\.(\d\d):/,(m,d,h)=>(+d*24+ +h)+":").replace(/:00$/,"")+" h)"],["Need date",fDT(a.need)],["Status",a.status+(a.late?" · late "+dur(a.e-a.need):"")]]};
+}
+const textW = s => s.length*6.3+10;
+
+function barHTML(a, cls, label, resList, nextX){
+  const x = scale.x(a.s), w = Math.max(3, scale.x(a.e)-x), i = tipOf(actTip(a,resList));
+  let h = `<div class="bar ${pc(a.proj)}${a.late?" late":""}" style="left:${x}px;width:${w}px" data-i="${i}" tabindex="0" aria-label="${esc(a.jobId+" "+a.op+" on "+(resList||a.res)+", "+fDT(a.s)+" to "+fDT(a.e))}"></div>`;
+  if (cls === "out") h += `<span class="bl" style="left:${x+w+7}px">${label}</span>`;
+  else {
+    const plain = label.replace(/<[^>]+>/g,""), tw = textW(plain);
+    if (tw <= w-6) h += `<span class="bl in" style="left:${x+6}px;width:${w-12}px">${plain}</span>`;
+    else if (nextX == null || x+w+7+tw < nextX) h += `<span class="bl" style="left:${x+w+7}px">${label}</span>`;
+  }
+  return h;
+}
+
+function projectRows(acts){
+  let out = "";
+  for (const p of PROJECTS){
+    const pa = acts.filter(a => a.proj === p); if (!pa.length) continue;
+    const ps = Math.min(...pa.map(a => a.s)), pe = Math.max(...pa.map(a => a.e)), jobs = [...new Set(pa.map(a => a.jobId))];
+    const open = state.level !== "project", x = scale.x(ps), w = scale.x(pe)-x;
+    const pl = Math.max(0,...jobs.map(j => { const ja = pa.filter(a => a.jobId===j); return ja.some(a => a.late) ? Math.max(...ja.map(a => a.e)) - Math.max(...ja.map(a => a.need)) : 0; }));
+    const pi = tipOf({t:p, late:pl>0, rows:[["Jobs",jobs.join(", ")],["Start",fDT(ps)],["End",fDT(pe)],["Span",dur(pe-ps)],...(pl>0?[["Late by",dur(pl)]]:[])]});
+    out += `<div class="row p"><div class="lc"><span class="sw ${pc(p)}"></span><span class="t">${esc(p)}</span>${pl>0?`<span class="pill">LATE ${dur(pl)}</span>`:""}</div><div class="tc" style="width:${scale.W+PAD}px"><div class="psum" style="left:${x}px;width:${w}px" data-i="${pi}"></div><span class="bl" style="left:${x+w+9}px"><small>${jobs.length} job${jobs.length>1?"s":""} · ${fD(ps)} → ${fD(pe)}</small></span></div></div>`;
+    if (!open) continue;
+    for (const j of jobs){
+      const ja = pa.filter(a => a.jobId === j), a0 = ja[0], js = Math.min(...ja.map(a => a.s)), je = Math.max(...ja.map(a => a.e)), need = Math.max(...ja.map(a => a.need));
+      const late = ja.some(a => a.late), jo = state.level === "operation", jx = scale.x(js), jw = scale.x(je)-jx;
+      const ji = tipOf({t:j+" · "+a0.job, late, rows:[["Project",p],["Product",a0.product+" × "+a0.qty],["Start",fDT(js)],["End",fDT(je)],["Span",dur(je-js)],["Need date",fDT(need)],["Status",late?"Late by "+dur(je-need):"On time, "+dur(need-je)+" float"]]});
+      out += `<div class="row j"><div class="lc"><span class="id">${j}</span><span class="t">${esc(a0.job)}</span>${late?`<span class="pill">LATE ${dur(je-need)}</span>`:""}</div><div class="tc" style="width:${scale.W+PAD}px"><div class="sum ${pc(p)}" style="left:${jx}px;width:${jw}px" data-i="${ji}"></div><span class="bl" style="left:${jx+jw+9}px"><small>${esc(a0.product)} × ${a0.qty} · need ${fD(need)}</small></span></div></div>`;
+      if (!jo) continue;
+      const ops = [...new Set(ja.map(a => a.opId))];
+      for (const o of ops){
+        const oa = ja.filter(a => a.opId === o), a = oa[0], rl = oa.map(r => r.res).join(" + ");
+        out += `<div class="row o"><div class="lc"><span class="id">${o}</span><span class="t" title="${esc(a.op)}">${esc(a.op)}</span></div><div class="tc" style="width:${scale.W+PAD}px">${barHTML(a,"out",`${esc(rl)} <small>· ${dur(a.e-a.s)}</small>`,rl)}</div></div>`;
+      }
+    }
+  }
+  return out;
+}
+
+function resourceRows(acts){
+  let out = ""; const depts = [...new Set(A.map(a => a.dept))];
+  for (const d of depts){
+    const da = acts.filter(a => a.dept === d); if (!da.length) continue;
+    const rs = [...new Set(da.map(a => a.res))];
+    out += `<div class="row p"><div class="lc"><span class="t">${esc(d)}</span></div><div class="tc" style="width:${scale.W+PAD}px"><span class="bl" style="left:8px"><small>${rs.length} resource${rs.length>1?"s":""} · ${da.length} activities</small></span></div></div>`;
+    for (const r of rs){
+      const ra = da.filter(a => a.res === r).sort((x,y) => x.s-y.s);
+      out += `<div class="row r"><div class="lc"><span class="t" title="${esc(r)}">${esc(r)}</span></div><div class="tc" style="width:${scale.W+PAD}px">${ra.map((a,i) => barHTML(a,"auto",`${a.jobId} <small>· ${esc(a.op)}</small>`,null, ra[i+1] ? scale.x(ra[i+1].s) : null)).join("")}</div></div>`;
+    }
+  }
+  return out;
+}
+
+function table(acts){
+  const rows = acts.slice().sort((a,b) => PROJECTS.indexOf(a.proj)-PROJECTS.indexOf(b.proj) || a.jobId.localeCompare(b.jobId) || a.opId.localeCompare(b.opId));
+  $("#tblwrap").innerHTML = `<table><thead><tr><th>Project</th><th>Job</th><th>Operation</th><th>Resource</th><th>Department</th><th>Start</th><th>End</th><th>Span</th><th>Need date</th><th>Status</th></tr></thead><tbody>` +
+    rows.map(a => `<tr><td><span class="sw ${pc(a.proj)}"></span>${esc(a.proj)}</td><td>${a.jobId} · ${esc(a.job)}</td><td>${a.opId} · ${esc(a.op)}</td><td>${esc(a.res)}</td><td>${esc(a.dept)}</td><td>${fDT(a.s)}</td><td>${fDT(a.e)}</td><td>${dur(a.e-a.s)}</td><td>${fDT(a.need)}</td><td class="${a.late?"lt":""}">${a.status}${a.late?" · late "+dur(a.e-a.need):""}</td></tr>`).join("") + `</tbody></table>`;
+}
+
+const PAD = 300;
+function render(){
+  const acts = visible();
+  buildFilters(); legend();
+  for (const l of ["project","job","operation"]) $("#l-"+l).setAttribute("aria-pressed", state.level === l);
+  $("#lvlwrap").style.display = state.view === "project" ? "contents" : "none";
+  for (const v of ["project","resource","table"]) $("#v-"+v).setAttribute("aria-pressed", state.view === v);
+  const isT = state.view === "table";
+  $("#board").hidden = isT; $("#tblwrap").hidden = !isT; $("#ganttctl").style.display = isT ? "none" : "contents";
+  if (isT) return table(acts);
+  tips = []; scale = makeScale(acts);
+  const hd = header(), W = scale.W + PAD;
+  const body = state.view === "project" ? projectRows(acts) : resourceRows(acts);
+  $("#inner").style.width = `calc(var(--lw) + ${W}px)`;
+  $("#inner").innerHTML = `<div class="grid" style="width:${W}px;top:${hd.hh}px">${hd.g}</div><div class="hd" style="height:${hd.hh}px"><div class="lc">${state.view === "project" ? "Project / Job / Operation" : "Department / Resource"}</div><div class="tc" style="width:${W}px">${hd.h}</div></div>${body || `<div class="row"><div class="lc">No activities match the filters</div></div>`}`;
+}
+
+const ZOOMS = [8,14,24,40,64,100,150,230,340,520,800,1200];
+function fit(){ const acts = visible(); const t = totalDays(acts), lw = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--lw")); state.ppd = Math.max(4, ($("#board").clientWidth - lw - t.breaks*BRK - 230)/Math.max(1,t.days)); render(); }
+$("#z-in").onclick = () => { state.ppd = ZOOMS.find(z => z > state.ppd*1.05) || state.ppd; render(); };
+$("#z-out").onclick = () => { state.ppd = [...ZOOMS].reverse().find(z => z < state.ppd/1.05) || state.ppd; render(); };
+$("#z-fit").onclick = fit;
+$("#compress").onchange = e => { state.compress = e.target.checked; if (!state.compress) fit(); else { state.ppd = 150; render(); } };
+for (const v of ["project","resource","table"]) $("#v-"+v).onclick = () => { state.view = v; render(); };
+for (const l of ["project","job","operation"]) $("#l-"+l).onclick = () => { state.level = l; render(); };
+$("#filters").addEventListener("change", e => { const d = e.target.closest(".dd"); if (!d) return; const set = F[d.dataset.f]; e.target.checked ? set.add(e.target.value) : set.delete(e.target.value); state.view === "table" ? render() : fit(); });
+$("#f-clear").onclick = () => { F.proj.clear(); F.job.clear(); F.op.clear(); state.view === "table" ? render() : fit(); };
+document.addEventListener("click", e => document.querySelectorAll("#filters .dd[open]").forEach(d => d.contains(e.target) || d.removeAttribute("open")));
+document.addEventListener("keydown", e => { if (e.key === "Escape") document.querySelectorAll("#filters .dd[open]").forEach(d => d.removeAttribute("open")); });
+/* ---- tooltip ---- */
+const tip = $("#tip");
+function showTip(el, cx, cy){
+  const t = tips[el.dataset.i]; if (!t) return;
+  tip.innerHTML = `<h4>${esc(t.t)}</h4><dl>${t.rows.map(([k,v]) => `<dt>${k}</dt><dd${k==="Status"&&t.late||k==="Late by"?' class="lt"':""}>${esc(v)}</dd>`).join("")}</dl>`;
+  tip.style.display = "block";
+  const r = tip.getBoundingClientRect(); let x = cx+14, y = cy+14;
+  if (x+r.width > innerWidth-8) x = Math.max(8, cx-r.width-14);
+  if (y+r.height > innerHeight-8) y = Math.max(8, cy-r.height-14);
+  tip.style.left = x+"px"; tip.style.top = y+"px";
+}
+$("#inner").addEventListener("mousemove", e => { const b = e.target.closest("[data-i]"); b ? showTip(b,e.clientX,e.clientY) : tip.style.display = "none"; });
+$("#inner").addEventListener("mouseleave", () => tip.style.display = "none");
+$("#inner").addEventListener("focusin", e => { const b = e.target.closest("[data-i]"); if (b){ const r = b.getBoundingClientRect(); showTip(b,r.left,r.bottom); } });
+$("#inner").addEventListener("focusout", () => tip.style.display = "none");
+$("#board").addEventListener("scroll", () => tip.style.display = "none");
+
+fit();
+</script>
+</body>
+</html>
