@@ -1,0 +1,57 @@
+name: Deploy
+
+# main -> APEX app 120 (PT_Gantt Charts), straight after every merge/push.
+# No approval, no validation gate, no drift check. Run it by hand
+# (Actions > Deploy > Run workflow) to redeploy.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", "README.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    name: deploy → app 120 (PT_Gantt Charts)
+    # Same Windows server as Progressly. Override with the RUNS_ON repo
+    # variable, e.g. '"ubuntu-latest"', if the runner is not available here.
+    runs-on: ${{ fromJSON(vars.RUNS_ON || '["self-hosted","Windows","X64"]') }}
+    timeout-minutes: 30
+    concurrency:
+      group: apex-pt-gantt-charts
+      cancel-in-progress: false
+    env:
+      APP_ID: "120"
+      APP_ALIAS: PT-GANTT-CHARTS
+      APP_NAME: PT_Gantt Charts
+    steps:
+      - uses: actions/checkout@v5
+
+      # Same database as Progressly: same secrets and DB_SERVICE variable.
+      - uses: ./.github/actions/setup-sqlcl
+        with:
+          wallet-base64: ${{ secrets.DB_WALLET_BASE64 }}
+          db-service: ${{ vars.DB_SERVICE }}
+          db-user: ${{ secrets.DB_USER }}
+          db-password: ${{ secrets.DB_PASSWORD }}
+
+      - name: Deploy
+        env:
+          CHANGED_BY: ${{ github.actor }}
+        run: bash ci/deploy.sh
+
+      - name: Keep logs
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v6
+        with:
+          name: logs
+          path: build/*.log
+          if-no-files-found: ignore
+          retention-days: 14

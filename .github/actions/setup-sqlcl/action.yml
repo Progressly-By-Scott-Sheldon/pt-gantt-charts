@@ -1,0 +1,67 @@
+name: Set up SQLcl
+description: Installs Java and SQLcl, writes the database wallet and exports the connection settings for the ci/ scripts.
+
+inputs:
+  wallet-base64:
+    description: Autonomous Database wallet zip, base64-encoded
+    required: true
+  db-service:
+    description: TNS alias from the wallet, e.g. scottsheldon_high
+    required: true
+  db-user:
+    required: true
+  db-password:
+    required: true
+  sqlcl-url:
+    description: SQLcl download (must support APEXlang, SQLcl 26.1 or later)
+    default: https://download.oracle.com/otn_software/java/sqldeveloper/sqlcl-latest.zip
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v5
+      with:
+        distribution: temurin
+        java-version: "21"
+
+    # "latest" is re-downloaded once a month; other runs reuse the cached copy.
+    - name: SQLcl cache key
+      id: sqlcl-key
+      shell: bash
+      run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+
+    - name: Restore SQLcl
+      id: sqlcl-cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ runner.temp }}/sqlcl
+        key: sqlcl-${{ runner.os }}-${{ hashFiles('.github/actions/setup-sqlcl/action.yml') }}-${{ inputs.sqlcl-url }}-${{ steps.sqlcl-key.outputs.month }}
+
+    - name: Install SQLcl
+      shell: bash
+      run: |
+        if [ "${{ steps.sqlcl-cache.outputs.cache-hit }}" != true ]; then
+          curl -fsSL -o "$RUNNER_TEMP/sqlcl.zip" "${{ inputs.sqlcl-url }}"
+          unzip -q "$RUNNER_TEMP/sqlcl.zip" -d "$RUNNER_TEMP"
+        fi
+        # On Windows bin/sql is a Unix shell script; sql.exe is the launcher.
+        if [ "$RUNNER_OS" = Windows ]; then sql=sql.exe; else sql=sql; fi
+        echo "SQLCL_BIN=$RUNNER_TEMP/sqlcl/bin/$sql" >> "$GITHUB_ENV"
+
+    - name: Write wallet and connection settings
+      shell: bash
+      env:
+        WALLET_B64: ${{ inputs.wallet-base64 }}
+        DB_PASSWORD_IN: ${{ inputs.db-password }}
+      run: |
+        [ -n "$WALLET_B64" ] || { echo "::error::The DB_WALLET_BASE64 secret is missing."; exit 1; }
+        [ -n "$DB_PASSWORD_IN" ] || { echo "::error::The DB_PASSWORD secret is missing."; exit 1; }
+        printf '%s' "$WALLET_B64" | base64 -d > "$RUNNER_TEMP/wallet.zip"
+        {
+          echo "DB_WALLET_ZIP=$RUNNER_TEMP/wallet.zip"
+          echo "DB_SERVICE=${{ inputs.db-service }}"
+          echo "DB_USER=${{ inputs.db-user }}"
+          echo "DB_PASSWORD=$DB_PASSWORD_IN"
+        } >> "$GITHUB_ENV"
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"

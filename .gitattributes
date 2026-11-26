@@ -1,0 +1,3 @@
+# Store files exactly as APEX exports them (no line-ending conversion),
+# so deploys and drift checks compare byte-for-byte.
+* -text

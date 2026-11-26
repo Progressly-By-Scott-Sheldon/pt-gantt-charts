@@ -1,0 +1,14 @@
+# Oracle wallet and local connection settings - never commit
+Wallet_*/
+*.sso
+*.p12
+cwallet*
+ewallet*
+apex-config.ps1
+.env
+
+# Local exports and backups
+fresh-export/
+backups/
+*.log
+build/
