@@ -1,0 +1,20 @@
+genAIService caludeopus (
+    name: CaludeOpus
+    provider: CLAUDE
+    endpointUrl {
+        url: https://api.anthropic.com/v1
+    }
+    authentication {
+        credentials: @credentials-for-caludeopus
+    }
+    appBuilder {
+        usedByAppBuilder: true
+        defaultForNewApps: true
+    }
+    advanced {
+        modelName: claude-opus-4-8
+        maxTokens: 1024
+        serverTimeout: 300
+    }
+)
+

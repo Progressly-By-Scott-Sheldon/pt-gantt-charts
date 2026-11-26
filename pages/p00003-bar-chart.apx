@@ -1,0 +1,108 @@
+page 3 (
+    name: Bar chart
+    alias: BAR-CHART
+    title: Bar chart
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region bar-chart (
+        name: Bar chart
+        type: chart
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        chartAppearance {
+            orientation: horizontal
+        }
+        chartLayout {
+            height: 400
+        }
+
+        series series-1 (
+            name: Series 1
+            execution {
+                sequence: 10
+            }
+            source {
+                type: sqlQuery
+                sqlQuery:
+                    ```sql
+                    SELECT
+                        CASE
+                            WHEN INSTR(NOTES, '_') > 0
+                            THEN SUBSTR(NOTES, 1, INSTR(NOTES, '_') - 1)
+                            ELSE NOTES
+                        END AS PROJECTS,
+                        JOBID,
+                        NAME
+                    FROM PT_JOBS;
+                    ```
+            }
+            orderBy {
+                type: staticValue
+                orderByClause: PROJECTS
+            }
+            columnMapping {
+                seriesName: PROJECTS
+                label: NAME
+                value: JOBID
+            }
+        )
+
+        axis x (
+            name: x
+        )
+
+        axis y (
+            name: y
+            value {
+                format: decimal
+                decimalPlaces: 0
+                formatScaling: none
+            }
+        )
+
+    )
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+)
+
