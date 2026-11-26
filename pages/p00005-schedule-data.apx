@@ -74,11 +74,14 @@ page 5 (
             sequence: 10
             region: @import-jobs
             slot: regionBody
-            alignment: left
+            columnSpan: 6
         }
         appearance {
-            template: @/optional
-            templateOptions: #DEFAULT#
+            template: @/optional-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
     )
 
@@ -88,12 +91,18 @@ page 5 (
         layout {
             sequence: 20
             region: @import-jobs
-            slot: next
+            slot: regionBody
+            startNewRow: false
         }
         appearance {
-            buttonTemplate: @/text
+            buttonTemplate: @/text-with-icon
             hot: true
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+                t-Button--padTop
+            ]
+            icon: fa-upload
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
@@ -174,11 +183,14 @@ page 5 (
             sequence: 10
             region: @import-operations
             slot: regionBody
-            alignment: left
+            columnSpan: 6
         }
         appearance {
-            template: @/optional
-            templateOptions: #DEFAULT#
+            template: @/optional-above
+            templateOptions: [
+                #DEFAULT#
+                t-Form-fieldContainer--stretchInputs
+            ]
         }
     )
 
@@ -188,12 +200,18 @@ page 5 (
         layout {
             sequence: 20
             region: @import-operations
-            slot: next
+            slot: regionBody
+            startNewRow: false
         }
         appearance {
-            buttonTemplate: @/text
+            buttonTemplate: @/text-with-icon
             hot: true
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Button--iconLeft
+                t-Button--padTop
+            ]
+            icon: fa-upload
         }
         behavior {
             warnOnUnsavedChanges: doNotCheck
