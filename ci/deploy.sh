@@ -5,8 +5,10 @@
 set -euo pipefail
 
 : "${APP_ID:?}" "${APP_ALIAS:?}" "${APP_NAME:?}"
+# workspace-components are not deployed: they already live in the workspace (shared with
+# other apps) and SQLcl rejects some of them, e.g. the CLAUDE Generative AI provider.
 APP_PATHS=(.apex application.apx deployments developer-comments.apx page-groups.apx
-           pages shared-components supporting-objects workspace-components)
+           pages shared-components supporting-objects)
 OUT=build
 rm -rf "$OUT"; mkdir -p "$OUT/src"
 OUT=$(cd "$OUT" && pwd)
