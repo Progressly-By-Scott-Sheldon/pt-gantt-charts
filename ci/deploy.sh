@@ -34,6 +34,10 @@ run_sql() {
 
 for p in "${APP_PATHS[@]}"; do [ -e "$p" ] && cp -a "$p" "$OUT/src/"; done
 [ -f "$OUT/src/application.apx" ] || fail "application.apx not found in the repo root."
+# The app's genAI block points at a workspace Generative AI service that is not
+# deployed (see above), so the import cannot resolve it. No page uses it; drop it.
+awk '/^    genAI \{/ { skip = 1; next } skip && /^    \}/ { skip = 0; next } !skip' \
+  "$OUT/src/application.apx" > "$OUT/app.tmp" && mv "$OUT/app.tmp" "$OUT/src/application.apx"
 
 log "Import into app $APP_ID ($APP_ALIAS)"
 who=$(printf '%s' "${CHANGED_BY:-unknown}" | tr -cd 'A-Za-z0-9_.[]-')
