@@ -134,5 +134,24 @@ list navigation-menu (
         }
     )
 
+    entry schedule-data (
+        label: Schedule Data
+        icon {
+            imageIconCssClasses: fa-table-pencil
+        }
+        layout {
+            sequence: 27
+        }
+        isCurrent {
+            type: pages
+            pages: 5
+        }
+        link {
+            target: {
+                page: 5
+            }
+        }
+    )
+
 )
 

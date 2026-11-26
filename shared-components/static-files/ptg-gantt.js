@@ -25,8 +25,7 @@
     '<div class="bar-row">' +
       '<div class="seg" role="group" aria-label="View">' +
         '<button type="button" data-v="project" aria-pressed="true">By project</button>' +
-        '<button type="button" data-v="resource" aria-pressed="false">By resource</button>' +
-        '<button type="button" data-v="table" aria-pressed="false">Table</button></div>' +
+        '<button type="button" data-v="resource" aria-pressed="false">By resource</button></div>' +
       '<span data-r="ganttctl" style="display:contents">' +
         '<div class="seg" role="group" aria-label="Zoom">' +
           '<button type="button" data-z="out" title="Zoom out" aria-label="Zoom out">−</button>' +
@@ -44,16 +43,17 @@
       '<details class="dd" data-f="job"><summary aria-label="Job filter"></summary><div class="menu" role="group" aria-label="Jobs"></div></details>' +
       '<details class="dd" data-f="op"><summary aria-label="Operation filter"></summary><div class="menu" role="group" aria-label="Operations"></div></details>' +
       '<button type="button" class="btn" data-r="clear">Clear filters</button>' +
-      '<span class="flab" data-r="count" aria-live="polite"></span></div>' +
+      '<span class="flab" data-r="count" aria-live="polite"></span>' +
+      '<a class="btn ptg-edit" data-r="edit" href="#">Add or edit data</a></div>' +
     '<div class="legend" data-r="legend"></div>' +
     '<div class="board" data-r="board"><div class="inner" data-r="inner"></div></div>' +
-    '<div class="tblwrap" data-r="tblwrap" hidden></div>' +
     '<p class="note">Bars run from Scheduled Start to Scheduled End, so they include setup and any off-shift or weekend time the activity spans. ' +
       'A red end cap marks an activity PlanetTogether flags as late against its need date. Jobs are grouped into projects by PT_JOB_PROJECTS.</p>' +
     '<div class="tip" role="tooltip" data-r="tip"></div>';
   var $ = function (r) { return root.querySelector('[data-r="' + r + '"]'); };
+  if (window.apex && apex.util && apex.util.makeApplicationUrl) $("edit").href = apex.util.makeApplicationUrl({ pageId: 5 });
 
-  if (!A.length) { $("inner").innerHTML = '<div class="empty">No scheduled activities in PT_ACTIVITIES.</div>'; return; }
+  if (!A.length) { $("inner").innerHTML = '<div class="empty">No scheduled activities yet. Use <a href="' + $("edit").href + '">Add or edit data</a> to enter some.</div>'; return; }
 
   /* projects in PT_PROJECTS.sort_order; colour fixed per project regardless of filters */
   var PROJECTS = P.uniq(A.slice().sort(function (a, b) { return (a.projSort - b.projSort) || (a.proj < b.proj ? -1 : a.proj > b.proj ? 1 : 0); }).map(function (a) { return a.proj; }));
@@ -212,27 +212,12 @@
     return out;
   }
 
-  function table(acts) {
-    var rows = acts.slice().sort(function (a, b) {
-      return PROJECTS.indexOf(a.proj) - PROJECTS.indexOf(b.proj) || a.jobId.localeCompare(b.jobId) || a.opId.localeCompare(b.opId);
-    });
-    $("tblwrap").innerHTML = "<table><caption class=\"u-VisuallyHidden\">Scheduled activities</caption><thead><tr><th>Project</th><th>Job</th><th>Operation</th><th>Resource</th><th>Department</th><th>Start</th><th>End</th><th>Span</th><th>Need date</th><th>Status</th></tr></thead><tbody>" +
-      rows.map(function (a) {
-        return '<tr><td><span class="sw ' + pc(a.proj) + '"></span>' + esc(a.proj) + "</td><td>" + esc(a.jobId) + " · " + esc(a.job) + "</td><td>" + esc(a.opId) + " · " + esc(a.op) +
-          "</td><td>" + esc(a.res) + "</td><td>" + esc(a.dept) + "</td><td>" + fDT(a.s) + "</td><td>" + fDT(a.e) + "</td><td>" + dur(a.e - a.s) + "</td><td>" + fDT(a.need) +
-          '</td><td class="' + (a.late ? "lt" : "") + '">' + esc(a.status) + (a.late && a.need != null ? " · late " + dur(a.e - a.need) : "") + "</td></tr>";
-      }).join("") + "</tbody></table>";
-  }
-
   function render() {
     var acts = visible();
     buildFilters(); legend();
     root.querySelectorAll("[data-l]").forEach(function (b) { b.setAttribute("aria-pressed", state.level === b.dataset.l); });
     root.querySelectorAll("[data-v]").forEach(function (b) { b.setAttribute("aria-pressed", state.view === b.dataset.v); });
     $("lvlwrap").style.display = state.view === "project" ? "contents" : "none";
-    var isT = state.view === "table";
-    $("board").hidden = isT; $("tblwrap").hidden = !isT; $("ganttctl").style.display = isT ? "none" : "contents";
-    if (isT) return table(acts);
     tips = []; scale = P.makeScale(acts, state);
     var hd = header(), W = scale.W + PAD;
     var body = state.view === "project" ? projectRows(acts) : resourceRows(acts);
@@ -264,9 +249,9 @@
     var d = e.target.closest(".dd"); if (!d) return;
     var set = F[d.dataset.f];
     if (e.target.checked) set.add(e.target.value); else set.delete(e.target.value);
-    if (state.view === "table") render(); else fit();
+    fit();
   });
-  $("clear").onclick = function () { F.proj.clear(); F.job.clear(); F.op.clear(); if (state.view === "table") render(); else fit(); };
+  $("clear").onclick = function () { F.proj.clear(); F.job.clear(); F.op.clear(); fit(); };
   document.addEventListener("click", function (e) {
     root.querySelectorAll('[data-r="filters"] .dd[open]').forEach(function (d) { if (!d.contains(e.target)) d.removeAttribute("open"); });
   });

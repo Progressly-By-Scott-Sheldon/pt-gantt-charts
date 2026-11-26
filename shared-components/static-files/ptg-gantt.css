@@ -95,12 +95,8 @@
 .ptg .tip dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:0}
 .ptg .tip dt{color:var(--ink2)}.ptg .tip dd{margin:0;font-variant-numeric:tabular-nums}
 .ptg .tip .lt{color:var(--crit);font-weight:600}
-.ptg .tblwrap{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:78vh}
-.ptg table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
-.ptg th,.ptg td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line2);white-space:nowrap}
-.ptg th{position:sticky;top:0;background:var(--surface);font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);border-bottom:1px solid var(--line)}
-.ptg td .sw{display:inline-block;margin-right:7px}
 .ptg td.lt{color:var(--crit);font-weight:600}
 .ptg .note{color:var(--ink2);font-size:12.5px;margin:12px 2px 0;max-width:95ch}
+.ptg a.btn{text-decoration:none;display:inline-block}
 .ptg .empty{padding:24px;color:var(--ink2)}
 @media (max-width:640px){.ptg{--lw:168px}.ptg .row.o .lc{padding-left:30px}.ptg .row.j .lc,.ptg .row.r .lc{padding-left:16px}}

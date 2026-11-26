@@ -87,3 +87,19 @@ select a.activity_id,
   join pt_resources r on r.resource_id = a.resource_id
   left join pt_job_projects jp on jp.job_external_id = a.job_external_id
   left join pt_projects p on p.project_id = jp.project_id;
+
+-- Rows entered on page 5 (Schedule Data) have no source_file: their late flag follows the
+-- dates, the same rule PlanetTogether uses (scheduled end after need date). Exported rows
+-- keep the flag from the export.
+create or replace trigger pt_activities_biu
+  before insert or update on pt_activities
+  for each row
+begin
+  if :new.source_file is null then
+    :new.is_late := case when :new.need_date is not null and :new.scheduled_end > :new.need_date then 'Y' else 'N' end;
+  end if;
+  if :new.scheduled_end < :new.scheduled_start then
+    raise_application_error(-20001, 'Scheduled End must be after Scheduled Start.');
+  end if;
+end;
+/
