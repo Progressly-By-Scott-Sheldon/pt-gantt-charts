@@ -1,0 +1,103 @@
+page 4 (
+    name: Schedule Gantt
+    alias: SCHEDULE-GANTT
+    title: Schedule Gantt
+    appearance {
+        pageTemplate: @/standard
+        templateOptions: #DEFAULT#
+    }
+    navigation {
+        cursorFocus: doNotFocusCursor
+    }
+    javaScript {
+        fileUrls: [
+            #APP_FILES#ptg-core.js
+            #APP_FILES#ptg-gantt.js
+        ]
+    }
+    css {
+        fileUrls: #APP_FILES#ptg-gantt.css
+    }
+    security {
+        pageAccessProtection: argumentsMustHaveChecksum
+        formAutoComplete: false
+    }
+
+    region breadcrumb (
+        name: Breadcrumb
+        type: breadcrumb
+        source {
+            breadcrumb: @breadcrumb
+        }
+        layout {
+            sequence: 10
+            slot: breadcrumbBar
+        }
+        appearance {
+            template: @/title-bar
+            templateOptions: [
+                #DEFAULT#
+                t-BreadcrumbRegion--useBreadcrumbTitle
+            ]
+        }
+        componentAppearance {
+            breadcrumbTemplate: @/breadcrumb
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    region schedule-gantt (
+        name: Schedule Gantt
+        type: dynamicContent
+        source {
+            plsqlFunctionBody:
+                ```plsql
+                -- PT_ACTIVITIES_V as JSON for ptg-gantt.js (see db/pt_gantt_tables.sql).
+                -- Dates are plant-local wall-clock text; the script never shifts them by time zone.
+                DECLARE
+                    l_json CLOB;
+                BEGIN
+                    SELECT JSON_OBJECT(
+                             'plant'  VALUE (SELECT MAX(plant_name) FROM pt_resources),
+                             'loaded' VALUE (SELECT TO_CHAR(MAX(loaded_on), 'YYYY-MM-DD"T"HH24:MI') FROM pt_activities),
+                             'acts'   VALUE (SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                                         'proj' VALUE project_name, 'projSort' VALUE project_sort,
+                                         'job' VALUE job_name, 'jobId' VALUE job_external_id,
+                                         'product' VALUE job_product, 'qty' VALUE job_quantity,
+                                         'op' VALUE operation_name, 'opId' VALUE operation_external_id,
+                                         'dept' VALUE department_name, 'res' VALUE resource_name,
+                                         'status' VALUE production_status,
+                                         's' VALUE TO_CHAR(scheduled_start, 'YYYY-MM-DD"T"HH24:MI'),
+                                         'e' VALUE TO_CHAR(scheduled_end, 'YYYY-MM-DD"T"HH24:MI'),
+                                         'need' VALUE TO_CHAR(need_date, 'YYYY-MM-DD"T"HH24:MI'),
+                                         'late' VALUE CASE is_late WHEN 'Y' THEN 'true' ELSE 'false' END FORMAT JSON,
+                                         'setupMin' VALUE setup_minutes, 'runMin' VALUE run_minutes)
+                                       ORDER BY scheduled_start, job_external_id, operation_external_id, resource_name
+                                       RETURNING CLOB)
+                                       FROM pt_activities_v)
+                             RETURNING CLOB)
+                      INTO l_json
+                      FROM dual;
+                    -- "<" inside a <script> block could close it early.
+                    RETURN '<div id="ptg" class="ptg"></div>'
+                        || '<script type="application/json" id="ptg-data">'
+                        || REPLACE(l_json, '<', '<')
+                        || '</script>';
+                END;
+                ```
+        }
+        layout {
+            sequence: 10
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--hideHeader js-addHiddenHeadingRoleDesc
+                t-Region--scrollBody
+            ]
+        }
+    )
+
+)

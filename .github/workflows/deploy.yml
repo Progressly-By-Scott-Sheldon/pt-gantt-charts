@@ -6,7 +6,7 @@ name: Deploy
 on:
   push:
     branches: [main]
-    paths-ignore: ["docs/**", "db/**", "README.md"]
+    paths-ignore: ["docs/**", "db/**", "tests/**", "package.json", "README.md"]
   workflow_dispatch:
 
 permissions:

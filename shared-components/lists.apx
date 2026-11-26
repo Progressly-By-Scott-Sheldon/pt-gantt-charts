@@ -115,5 +115,24 @@ list navigation-menu (
         }
     )
 
+    entry schedule-gantt (
+        label: Schedule Gantt
+        icon {
+            imageIconCssClasses: fa-calendar-clock
+        }
+        layout {
+            sequence: 25
+        }
+        isCurrent {
+            type: pages
+            pages: 4
+        }
+        link {
+            target: {
+                page: 4
+            }
+        }
+    )
+
 )
 

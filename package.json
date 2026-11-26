@@ -1,0 +1,7 @@
+{
+  "name": "pt-gantt-charts",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}

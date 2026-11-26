@@ -23,3 +23,17 @@ file "icons/app-icon-512.png" (
     charSet: utf-8
 )
 
+file ptg-core.js (
+    mimeType: text/javascript
+    charSet: utf-8
+)
+
+file ptg-gantt.css (
+    mimeType: text/css
+    charSet: utf-8
+)
+
+file ptg-gantt.js (
+    mimeType: text/javascript
+    charSet: utf-8
+)
