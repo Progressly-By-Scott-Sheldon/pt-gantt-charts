@@ -37,12 +37,12 @@ page 5 (
         }
     )
 
-    region activities (
-        name: Activities
+    region pt-jobs (
+        name: Jobs
         type: interactiveGrid
         source {
             location: localDatabase
-            tableName: PT_ACTIVITIES
+            tableName: PT_JOBS
         }
         layout {
             sequence: 10
@@ -55,7 +55,1044 @@ page 5 (
         headerAndFooter {
             headerText:
                 ```html
-                <p class="u-color-text-muted margin-bottom-sm">One row per operation on one resource. An operation that runs on two resources at once (for example a welder and a weld cell) is two rows with the same Job Id, Op Id and times. Late is worked out from Scheduled End and Need Date when you save. Add resources and projects below first.</p>
+                <p class="u-color-text-muted margin-bottom-sm">One row per job. Project groups the jobs on the Schedule Gantt (for example Project 1). Add the job here first, then its operations below. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p>
+                ```
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: scroll
+        }
+        toolbar {
+            controls: [
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        heading {
+            fixedTo: region
+            fixedReportHeight: 300
+        }
+
+        savedReport 9100005 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @EXTERNALID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @NAME
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @NOTES
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @PRODUCT
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @QTY
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @NEEDDATETIME
+                layout {
+                    sequence: 6
+                }
+            )
+
+            displayColumn (
+                column: @JOBID
+                layout {
+                    sequence: 7
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column ROWID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ROWID
+                dataType: rowid
+                primaryKey: true
+            }
+        )
+
+        column EXTERNALID (
+            type: textField
+            heading {
+                heading: Job ID
+            }
+            layout {
+                sequence: 40
+            }
+            validation {
+                valueRequired: true
+                maxLength: 50
+            }
+            source {
+                databaseColumn: EXTERNALID
+                dataType: varchar2
+            }
+        )
+
+        column NAME (
+            type: textField
+            heading {
+                heading: Job Name
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                valueRequired: true
+                maxLength: 255
+            }
+            source {
+                databaseColumn: NAME
+                dataType: varchar2
+            }
+        )
+
+        column NOTES (
+            type: textField
+            heading {
+                heading: Project
+            }
+            layout {
+                sequence: 60
+            }
+            validation {
+                valueRequired: true
+                maxLength: 4000
+            }
+            source {
+                databaseColumn: NOTES
+                dataType: varchar2
+            }
+        )
+
+        column PRODUCT (
+            type: textField
+            heading {
+                heading: Product
+            }
+            layout {
+                sequence: 70
+            }
+            validation {
+                maxLength: 255
+            }
+            source {
+                databaseColumn: PRODUCT
+                dataType: varchar2
+            }
+        )
+
+        column QTY (
+            type: numberField
+            heading {
+                heading: Qty
+                alignment: end
+            }
+            layout {
+                sequence: 80
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: QTY
+                dataType: number
+            }
+        )
+
+        column NEEDDATETIME (
+            type: datePicker
+            heading {
+                heading: Need Date
+            }
+            settings {
+                showTime: true
+            }
+            layout {
+                sequence: 90
+            }
+            appearance {
+                formatMask: DD-MM-YYYY HH24:MI
+            }
+            source {
+                databaseColumn: NEEDDATETIME
+                dataType: timestamp
+            }
+        )
+
+        column JOBID (
+            type: displayOnly
+            heading {
+                heading: Job No
+            }
+            layout {
+                sequence: 100
+            }
+            source {
+                databaseColumn: JOBID
+                dataType: number
+                queryOnly: true
+            }
+        )
+    )
+
+    region pt-operations (
+        name: Operations
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            tableName: PT_JOB_OPERATIONS
+        }
+        layout {
+            sequence: 20
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        headerAndFooter {
+            headerText:
+                ```html
+                <p class="u-color-text-muted margin-bottom-sm">One row per operation: each is a bar on the Schedule Gantt. Name is the operation (Cutting, Bending ...), External ID its sequence (Op010, Op020 ...). Pick one or more resources. Late is worked out from Scheduled End and Need Date when you save. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p>
+                ```
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: scroll
+        }
+        toolbar {
+            controls: [
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        heading {
+            fixedTo: region
+            fixedReportHeight: 400
+        }
+
+        savedReport 9100006 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @JOBID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @EXTERNALID
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @NAME
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @PRODUCTSLIST
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @SCHEDULEDSTART
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @SCHEDULEDEND
+                layout {
+                    sequence: 6
+                }
+            )
+
+            displayColumn (
+                column: @NEEDDATE
+                layout {
+                    sequence: 7
+                }
+            )
+
+            displayColumn (
+                column: @RESOURCESUSED
+                layout {
+                    sequence: 8
+                }
+            )
+
+            displayColumn (
+                column: @LATE_YN
+                layout {
+                    sequence: 9
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column ROWID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: ROWID
+                dataType: rowid
+                primaryKey: true
+            }
+        )
+
+        column JOBID (
+            type: popupLov
+            heading {
+                heading: Job
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery: SELECT externalid || ' · ' || name d, jobid r FROM pt_jobs ORDER BY externalid
+            }
+            layout {
+                sequence: 40
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: JOBID
+                dataType: number
+            }
+        )
+
+        column EXTERNALID (
+            type: textField
+            heading {
+                heading: External ID
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                maxLength: 4000
+            }
+            source {
+                databaseColumn: EXTERNALID
+                dataType: varchar2
+            }
+        )
+
+        column NAME (
+            type: textField
+            heading {
+                heading: Name
+            }
+            layout {
+                sequence: 60
+            }
+            validation {
+                valueRequired: true
+                maxLength: 4000
+            }
+            source {
+                databaseColumn: NAME
+                dataType: varchar2
+            }
+        )
+
+        column PRODUCTSLIST (
+            type: textField
+            heading {
+                heading: Product List
+            }
+            layout {
+                sequence: 70
+            }
+            validation {
+                maxLength: 4000
+            }
+            source {
+                databaseColumn: PRODUCTSLIST
+                dataType: varchar2
+            }
+        )
+
+        column SCHEDULEDSTART (
+            type: datePicker
+            heading {
+                heading: Scheduled Start
+            }
+            settings {
+                showTime: true
+            }
+            layout {
+                sequence: 80
+            }
+            appearance {
+                formatMask: DD-MM-YYYY HH24:MI
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: SCHEDULEDSTART
+                dataType: date
+            }
+        )
+
+        column SCHEDULEDEND (
+            type: datePicker
+            heading {
+                heading: Scheduled End
+            }
+            settings {
+                showTime: true
+            }
+            layout {
+                sequence: 90
+            }
+            appearance {
+                formatMask: DD-MM-YYYY HH24:MI
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: SCHEDULEDEND
+                dataType: date
+            }
+        )
+
+        column NEEDDATE (
+            type: datePicker
+            heading {
+                heading: Need Date
+            }
+            settings {
+                showTime: true
+            }
+            layout {
+                sequence: 100
+            }
+            appearance {
+                formatMask: DD-MM-YYYY HH24:MI
+            }
+            source {
+                databaseColumn: NEEDDATE
+                dataType: date
+            }
+        )
+
+        column RESOURCESUSED (
+            type: popupLov
+            heading {
+                heading: Resources
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery: SELECT resource_name || ' (' || department_name || ')' d, resource_name r FROM pt_resources ORDER BY department_name, resource_name
+            }
+            multipleValues {
+                type: delimitedList
+                separator: ,
+            }
+            layout {
+                sequence: 110
+            }
+            validation {
+                maxLength: 4000
+            }
+            source {
+                databaseColumn: RESOURCESUSED
+                dataType: varchar2
+            }
+        )
+
+        column LATE_YN (
+            type: displayOnly
+            heading {
+                heading: Late
+            }
+            layout {
+                sequence: 120
+            }
+            source {
+                databaseColumn: LATE_YN
+                dataType: varchar2
+                queryOnly: true
+            }
+        )
+    )
+
+    region resources (
+        name: Resources
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            tableName: PT_RESOURCES
+        }
+        layout {
+            sequence: 30
+            slot: body
+            columnSpan: 4
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        headerAndFooter {
+            headerText:
+                ```html
+                <p class="u-color-text-muted margin-bottom-sm">Machines, cells and people that operations run on. Department groups them in the By resource view.</p>
+                ```
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: scroll
+        }
+        toolbar {
+            controls: [
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        heading {
+            fixedTo: region
+            fixedReportHeight: 300
+        }
+
+        savedReport 9100004 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @RESOURCE_NAME
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @DEPARTMENT_NAME
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @PLANT_NAME
+                layout {
+                    sequence: 3
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column RESOURCE_ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: RESOURCE_ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column RESOURCE_NAME (
+            type: textField
+            heading {
+                heading: Resource
+            }
+            layout {
+                sequence: 40
+            }
+            validation {
+                valueRequired: true
+                maxLength: 200
+            }
+            source {
+                databaseColumn: RESOURCE_NAME
+                dataType: varchar2
+            }
+        )
+
+        column DEPARTMENT_NAME (
+            type: textField
+            heading {
+                heading: Department
+            }
+            layout {
+                sequence: 50
+            }
+            validation {
+                valueRequired: true
+                maxLength: 200
+            }
+            source {
+                databaseColumn: DEPARTMENT_NAME
+                dataType: varchar2
+            }
+        )
+
+        column PLANT_NAME (
+            type: textField
+            heading {
+                heading: Plant
+            }
+            layout {
+                sequence: 60
+            }
+            validation {
+                valueRequired: true
+                maxLength: 200
+            }
+            source {
+                databaseColumn: PLANT_NAME
+                dataType: varchar2
+            }
+            default {
+                type: static
+                staticValue: L&T MHI Power Boilers Pvt Ltd
+            }
+        )
+    )
+
+    region projects (
+        name: Projects
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            tableName: PT_PROJECTS
+        }
+        layout {
+            sequence: 40
+            slot: body
+            columnSpan: 4
+            startNewRow: false
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        headerAndFooter {
+            headerText:
+                ```html
+                <p class="u-color-text-muted margin-bottom-sm">Only used by the older activities below. Order sets their order on the Gantt.</p>
+                ```
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: scroll
+        }
+        toolbar {
+            controls: [
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        heading {
+            fixedTo: region
+            fixedReportHeight: 300
+        }
+
+        savedReport 9100002 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @PROJECT_NAME
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @SORT_ORDER
+                layout {
+                    sequence: 2
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column PROJECT_ID (
+            type: hidden
+            layout {
+                sequence: 30
+            }
+            source {
+                databaseColumn: PROJECT_ID
+                dataType: number
+                primaryKey: true
+            }
+        )
+
+        column PROJECT_NAME (
+            type: textField
+            heading {
+                heading: Project
+            }
+            layout {
+                sequence: 40
+            }
+            validation {
+                valueRequired: true
+                maxLength: 200
+            }
+            source {
+                databaseColumn: PROJECT_NAME
+                dataType: varchar2
+            }
+        )
+
+        column SORT_ORDER (
+            type: numberField
+            heading {
+                heading: Order
+                alignment: end
+            }
+            layout {
+                sequence: 50
+                columnAlignment: end
+            }
+            source {
+                databaseColumn: SORT_ORDER
+                dataType: number
+            }
+        )
+    )
+
+    region job-projects (
+        name: Job to Project
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            tableName: PT_JOB_PROJECTS
+        }
+        layout {
+            sequence: 50
+            slot: body
+            columnSpan: 4
+            startNewRow: false
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        headerAndFooter {
+            headerText:
+                ```html
+                <p class="u-color-text-muted margin-bottom-sm">Only used by the older activities below, for jobs that are not in Jobs above.</p>
+                ```
+        }
+        edit {
+            enabled: true
+            allowedOperations: [
+                add
+                update
+                delete
+            ]
+        }
+        pagination {
+            type: scroll
+        }
+        toolbar {
+            controls: [
+                searchField
+                actionsMenu
+                resetButton
+                saveButton
+            ]
+        }
+        heading {
+            fixedTo: region
+            fixedReportHeight: 300
+        }
+
+        savedReport 9100003 (
+            visibility: primary
+            view {
+                default: grid
+            }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @JOB_EXTERNAL_ID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @PROJECT_ID
+                layout {
+                    sequence: 2
+                }
+            )
+
+        )
+
+        column APEX$ROW_ACTION (
+            type: actionsMenu
+            layout {
+                sequence: 20
+            }
+        )
+
+        column APEX$ROW_SELECTOR (
+            type: rowSelector
+            layout {
+                sequence: 10
+            }
+        )
+
+        column JOB_EXTERNAL_ID (
+            type: textField
+            heading {
+                heading: Job Id
+            }
+            layout {
+                sequence: 30
+            }
+            validation {
+                valueRequired: true
+                maxLength: 100
+            }
+            source {
+                databaseColumn: JOB_EXTERNAL_ID
+                dataType: varchar2
+                primaryKey: true
+            }
+        )
+
+        column PROJECT_ID (
+            type: popupLov
+            heading {
+                heading: Project
+            }
+            lov {
+                type: sqlQuery
+                sqlQuery: SELECT project_name d, project_id r FROM pt_projects ORDER BY sort_order NULLS LAST, project_name
+            }
+            layout {
+                sequence: 40
+            }
+            validation {
+                valueRequired: true
+            }
+            source {
+                databaseColumn: PROJECT_ID
+                dataType: number
+            }
+        )
+    )
+
+    region activities (
+        name: Older activities
+        type: interactiveGrid
+        source {
+            location: localDatabase
+            tableName: PT_ACTIVITIES
+        }
+        layout {
+            sequence: 60
+            slot: body
+        }
+        appearance {
+            template: @/interactive-report
+            templateOptions: #DEFAULT#
+        }
+        headerAndFooter {
+            headerText:
+                ```html
+                <p class="u-color-text-muted margin-bottom-sm">Activities entered before the Jobs and Operations grids existed. Rows added here still show on the Gantt; new work belongs in Jobs and Operations above.</p>
                 ```
         }
         edit {
@@ -485,448 +1522,22 @@ page 5 (
         )
     )
 
-    region projects (
-        name: Projects
-        type: interactiveGrid
-        source {
-            location: localDatabase
-            tableName: PT_PROJECTS
+    process save-pt-jobs (
+        name: Jobs - Save Interactive Grid Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @pt-jobs
+        execution {
+            sequence: 10
         }
-        layout {
+    )
+
+    process save-pt-operations (
+        name: Operations - Save Interactive Grid Data
+        type: interactiveGridAutoRowProcessing
+        editableRegion: @pt-operations
+        execution {
             sequence: 20
-            slot: body
-            columnSpan: 4
         }
-        appearance {
-            template: @/interactive-report
-            templateOptions: #DEFAULT#
-        }
-        headerAndFooter {
-            headerText:
-                ```html
-                <p class="u-color-text-muted margin-bottom-sm">Order sets the order and colour on the Gantt.</p>
-                ```
-        }
-        edit {
-            enabled: true
-            allowedOperations: [
-                add
-                update
-                delete
-            ]
-        }
-        pagination {
-            type: scroll
-        }
-        toolbar {
-            controls: [
-                searchField
-                actionsMenu
-                resetButton
-                saveButton
-            ]
-        }
-        heading {
-            fixedTo: region
-            fixedReportHeight: 300
-        }
-
-        savedReport 9100002 (
-            visibility: primary
-            view {
-                default: grid
-            }
-            singleRowView {
-                displayedColumns: true
-            }
-
-            displayColumn (
-                column: @APEX$ROW_ACTION
-                layout {
-                    sequence: 0
-                }
-            )
-
-            displayColumn (
-                column: @PROJECT_NAME
-                layout {
-                    sequence: 1
-                }
-            )
-
-            displayColumn (
-                column: @SORT_ORDER
-                layout {
-                    sequence: 2
-                }
-            )
-
-        )
-
-        column APEX$ROW_ACTION (
-            type: actionsMenu
-            layout {
-                sequence: 20
-            }
-        )
-
-        column APEX$ROW_SELECTOR (
-            type: rowSelector
-            layout {
-                sequence: 10
-            }
-        )
-
-        column PROJECT_ID (
-            type: hidden
-            layout {
-                sequence: 30
-            }
-            source {
-                databaseColumn: PROJECT_ID
-                dataType: number
-                primaryKey: true
-            }
-        )
-
-        column PROJECT_NAME (
-            type: textField
-            heading {
-                heading: Project
-            }
-            layout {
-                sequence: 40
-            }
-            validation {
-                valueRequired: true
-                maxLength: 200
-            }
-            source {
-                databaseColumn: PROJECT_NAME
-                dataType: varchar2
-            }
-        )
-
-        column SORT_ORDER (
-            type: numberField
-            heading {
-                heading: Order
-                alignment: end
-            }
-            layout {
-                sequence: 50
-                columnAlignment: end
-            }
-            source {
-                databaseColumn: SORT_ORDER
-                dataType: number
-            }
-        )
-    )
-
-    region job-projects (
-        name: Job to Project
-        type: interactiveGrid
-        source {
-            location: localDatabase
-            tableName: PT_JOB_PROJECTS
-        }
-        layout {
-            sequence: 30
-            slot: body
-            columnSpan: 4
-            startNewRow: false
-        }
-        appearance {
-            template: @/interactive-report
-            templateOptions: #DEFAULT#
-        }
-        headerAndFooter {
-            headerText:
-                ```html
-                <p class="u-color-text-muted margin-bottom-sm">Which project each Job Id belongs to. Jobs not listed show under their product name.</p>
-                ```
-        }
-        edit {
-            enabled: true
-            allowedOperations: [
-                add
-                update
-                delete
-            ]
-        }
-        pagination {
-            type: scroll
-        }
-        toolbar {
-            controls: [
-                searchField
-                actionsMenu
-                resetButton
-                saveButton
-            ]
-        }
-        heading {
-            fixedTo: region
-            fixedReportHeight: 300
-        }
-
-        savedReport 9100003 (
-            visibility: primary
-            view {
-                default: grid
-            }
-            singleRowView {
-                displayedColumns: true
-            }
-
-            displayColumn (
-                column: @APEX$ROW_ACTION
-                layout {
-                    sequence: 0
-                }
-            )
-
-            displayColumn (
-                column: @JOB_EXTERNAL_ID
-                layout {
-                    sequence: 1
-                }
-            )
-
-            displayColumn (
-                column: @PROJECT_ID
-                layout {
-                    sequence: 2
-                }
-            )
-
-        )
-
-        column APEX$ROW_ACTION (
-            type: actionsMenu
-            layout {
-                sequence: 20
-            }
-        )
-
-        column APEX$ROW_SELECTOR (
-            type: rowSelector
-            layout {
-                sequence: 10
-            }
-        )
-
-        column JOB_EXTERNAL_ID (
-            type: textField
-            heading {
-                heading: Job Id
-            }
-            layout {
-                sequence: 30
-            }
-            validation {
-                valueRequired: true
-                maxLength: 100
-            }
-            source {
-                databaseColumn: JOB_EXTERNAL_ID
-                dataType: varchar2
-                primaryKey: true
-            }
-        )
-
-        column PROJECT_ID (
-            type: popupLov
-            heading {
-                heading: Project
-            }
-            lov {
-                type: sqlQuery
-                sqlQuery: SELECT project_name d, project_id r FROM pt_projects ORDER BY sort_order NULLS LAST, project_name
-            }
-            layout {
-                sequence: 40
-            }
-            validation {
-                valueRequired: true
-            }
-            source {
-                databaseColumn: PROJECT_ID
-                dataType: number
-            }
-        )
-    )
-
-    region resources (
-        name: Resources
-        type: interactiveGrid
-        source {
-            location: localDatabase
-            tableName: PT_RESOURCES
-        }
-        layout {
-            sequence: 40
-            slot: body
-            columnSpan: 4
-            startNewRow: false
-        }
-        appearance {
-            template: @/interactive-report
-            templateOptions: #DEFAULT#
-        }
-        headerAndFooter {
-            headerText:
-                ```html
-                <p class="u-color-text-muted margin-bottom-sm">Machines, cells and people that activities run on.</p>
-                ```
-        }
-        edit {
-            enabled: true
-            allowedOperations: [
-                add
-                update
-                delete
-            ]
-        }
-        pagination {
-            type: scroll
-        }
-        toolbar {
-            controls: [
-                searchField
-                actionsMenu
-                resetButton
-                saveButton
-            ]
-        }
-        heading {
-            fixedTo: region
-            fixedReportHeight: 300
-        }
-
-        savedReport 9100004 (
-            visibility: primary
-            view {
-                default: grid
-            }
-            singleRowView {
-                displayedColumns: true
-            }
-
-            displayColumn (
-                column: @APEX$ROW_ACTION
-                layout {
-                    sequence: 0
-                }
-            )
-
-            displayColumn (
-                column: @RESOURCE_NAME
-                layout {
-                    sequence: 1
-                }
-            )
-
-            displayColumn (
-                column: @DEPARTMENT_NAME
-                layout {
-                    sequence: 2
-                }
-            )
-
-            displayColumn (
-                column: @PLANT_NAME
-                layout {
-                    sequence: 3
-                }
-            )
-
-        )
-
-        column APEX$ROW_ACTION (
-            type: actionsMenu
-            layout {
-                sequence: 20
-            }
-        )
-
-        column APEX$ROW_SELECTOR (
-            type: rowSelector
-            layout {
-                sequence: 10
-            }
-        )
-
-        column RESOURCE_ID (
-            type: hidden
-            layout {
-                sequence: 30
-            }
-            source {
-                databaseColumn: RESOURCE_ID
-                dataType: number
-                primaryKey: true
-            }
-        )
-
-        column RESOURCE_NAME (
-            type: textField
-            heading {
-                heading: Resource
-            }
-            layout {
-                sequence: 40
-            }
-            validation {
-                valueRequired: true
-                maxLength: 200
-            }
-            source {
-                databaseColumn: RESOURCE_NAME
-                dataType: varchar2
-            }
-        )
-
-        column DEPARTMENT_NAME (
-            type: textField
-            heading {
-                heading: Department
-            }
-            layout {
-                sequence: 50
-            }
-            validation {
-                valueRequired: true
-                maxLength: 200
-            }
-            source {
-                databaseColumn: DEPARTMENT_NAME
-                dataType: varchar2
-            }
-        )
-
-        column PLANT_NAME (
-            type: textField
-            heading {
-                heading: Plant
-            }
-            layout {
-                sequence: 60
-            }
-            validation {
-                valueRequired: true
-                maxLength: 200
-            }
-            source {
-                databaseColumn: PLANT_NAME
-                dataType: varchar2
-            }
-            default {
-                type: static
-                staticValue: L&T MHI Power Boilers Pvt Ltd
-            }
-        )
     )
 
     process save-projects (
@@ -934,7 +1545,7 @@ page 5 (
         type: interactiveGridAutoRowProcessing
         editableRegion: @projects
         execution {
-            sequence: 10
+            sequence: 30
         }
     )
 
@@ -943,7 +1554,7 @@ page 5 (
         type: interactiveGridAutoRowProcessing
         editableRegion: @resources
         execution {
-            sequence: 20
+            sequence: 40
         }
     )
 
@@ -952,16 +1563,16 @@ page 5 (
         type: interactiveGridAutoRowProcessing
         editableRegion: @job-projects
         execution {
-            sequence: 30
+            sequence: 50
         }
     )
 
     process save-activities (
-        name: Activities - Save Interactive Grid Data
+        name: Older activities - Save Interactive Grid Data
         type: interactiveGridAutoRowProcessing
         editableRegion: @activities
         execution {
-            sequence: 40
+            sequence: 60
         }
     )
 
