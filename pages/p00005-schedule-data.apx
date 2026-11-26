@@ -87,6 +87,115 @@ page 5 (
             view {
                 default: grid
             }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @JOB_EXTERNAL_ID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @JOB_NAME
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @JOB_PRODUCT
+                layout {
+                    sequence: 3
+                }
+            )
+
+            displayColumn (
+                column: @JOB_QUANTITY
+                layout {
+                    sequence: 4
+                }
+            )
+
+            displayColumn (
+                column: @OPERATION_EXTERNAL_ID
+                layout {
+                    sequence: 5
+                }
+            )
+
+            displayColumn (
+                column: @OPERATION_NAME
+                layout {
+                    sequence: 6
+                }
+            )
+
+            displayColumn (
+                column: @RESOURCE_ID
+                layout {
+                    sequence: 7
+                }
+            )
+
+            displayColumn (
+                column: @PRODUCTION_STATUS
+                layout {
+                    sequence: 8
+                }
+            )
+
+            displayColumn (
+                column: @SCHEDULED_START
+                layout {
+                    sequence: 9
+                }
+            )
+
+            displayColumn (
+                column: @SCHEDULED_END
+                layout {
+                    sequence: 10
+                }
+            )
+
+            displayColumn (
+                column: @NEED_DATE
+                layout {
+                    sequence: 11
+                }
+            )
+
+            displayColumn (
+                column: @SETUP_MINUTES
+                layout {
+                    sequence: 12
+                }
+            )
+
+            displayColumn (
+                column: @RUN_MINUTES
+                layout {
+                    sequence: 13
+                }
+            )
+
+            displayColumn (
+                column: @IS_LATE
+                layout {
+                    sequence: 14
+                }
+            )
+
         )
 
         column APEX$ROW_ACTION (
@@ -427,6 +536,31 @@ page 5 (
             view {
                 default: grid
             }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @PROJECT_NAME
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @SORT_ORDER
+                layout {
+                    sequence: 2
+                }
+            )
+
         )
 
         column APEX$ROW_ACTION (
@@ -542,6 +676,31 @@ page 5 (
             view {
                 default: grid
             }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @JOB_EXTERNAL_ID
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @PROJECT_ID
+                layout {
+                    sequence: 2
+                }
+            )
+
         )
 
         column APEX$ROW_ACTION (
@@ -651,6 +810,38 @@ page 5 (
             view {
                 default: grid
             }
+            singleRowView {
+                displayedColumns: true
+            }
+
+            displayColumn (
+                column: @APEX$ROW_ACTION
+                layout {
+                    sequence: 0
+                }
+            )
+
+            displayColumn (
+                column: @RESOURCE_NAME
+                layout {
+                    sequence: 1
+                }
+            )
+
+            displayColumn (
+                column: @DEPARTMENT_NAME
+                layout {
+                    sequence: 2
+                }
+            )
+
+            displayColumn (
+                column: @PLANT_NAME
+                layout {
+                    sequence: 3
+                }
+            )
+
         )
 
         column APEX$ROW_ACTION (
