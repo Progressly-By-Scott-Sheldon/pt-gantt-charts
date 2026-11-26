@@ -37,6 +37,206 @@ page 5 (
         }
     )
 
+    region import-jobs (
+        name: Import Jobs
+        type: staticContent
+        layout {
+            sequence: 5
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        headerAndFooter {
+            headerText:
+                ```html
+                <p class="u-color-text-muted margin-bottom-sm">Upload the PlanetTogether Jobs export (.xlsx) to replace PlanetTogether's jobs below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p>
+                ```
+        }
+    )
+
+    pageItem P5_JOBS_FILE (
+        type: fileUpload
+        label {
+            label: Jobs export (.xlsx)
+            alignment: left
+        }
+        storage {
+            type: appTempFiles
+            purgeFileAt: endOfRequest
+            maxFileSize: 10000
+        }
+        layout {
+            sequence: 10
+            region: @import-jobs
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button import-jobs (
+        buttonName: IMPORT_JOBS
+        label: Import Jobs
+        layout {
+            sequence: 20
+            region: @import-jobs
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process import-jobs (
+        name: Import Jobs
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_blob BLOB;
+                    l_name VARCHAR2(400);
+                    l_msg  VARCHAR2(4000);
+                BEGIN
+                    IF :P5_JOBS_FILE IS NULL THEN
+                        apex_error.add_error(p_message => 'Choose the PlanetTogether Jobs export (.xlsx) first.',
+                                             p_display_location => apex_error.c_inline_in_notification);
+                        RETURN;
+                    END IF;
+                    SELECT blob_content, filename INTO l_blob, l_name
+                      FROM apex_application_temp_files
+                     WHERE name = :P5_JOBS_FILE;
+                    -- Replaces PlanetTogether's rows in PT_JOBS, keeps rows added by hand (see db/pt_import.sql).
+                    pt_import.import_xlsx('PT_JOBS', l_blob, l_name, l_msg);
+                    apex_application.g_print_success_message := apex_escape.html(l_msg);
+                EXCEPTION
+                    WHEN OTHERS THEN
+                        apex_error.add_error(p_message => regexp_replace(sqlerrm, '^ORA-[0-9]+: ', ''),
+                                             p_display_location => apex_error.c_inline_in_notification);
+                END;
+                ```
+        }
+        execution {
+            sequence: 5
+        }
+        serverSideCondition {
+            whenButtonPressed: @import-jobs
+        }
+    )
+
+    region import-operations (
+        name: Import Operations
+        type: staticContent
+        layout {
+            sequence: 15
+            slot: body
+        }
+        appearance {
+            template: @/standard
+            templateOptions: [
+                #DEFAULT#
+                t-Region--scrollBody
+            ]
+        }
+        headerAndFooter {
+            headerText:
+                ```html
+                <p class="u-color-text-muted margin-bottom-sm">Upload the PlanetTogether Operations export (.xlsx) to replace PlanetTogether's operations below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p>
+                ```
+        }
+    )
+
+    pageItem P5_OPERATIONS_FILE (
+        type: fileUpload
+        label {
+            label: Operations export (.xlsx)
+            alignment: left
+        }
+        storage {
+            type: appTempFiles
+            purgeFileAt: endOfRequest
+            maxFileSize: 10000
+        }
+        layout {
+            sequence: 10
+            region: @import-operations
+            slot: regionBody
+            alignment: left
+        }
+        appearance {
+            template: @/optional
+            templateOptions: #DEFAULT#
+        }
+    )
+
+    button import-operations (
+        buttonName: IMPORT_OPERATIONS
+        label: Import Operations
+        layout {
+            sequence: 20
+            region: @import-operations
+            slot: next
+        }
+        appearance {
+            buttonTemplate: @/text
+            hot: true
+            templateOptions: #DEFAULT#
+        }
+        behavior {
+            warnOnUnsavedChanges: doNotCheck
+        }
+    )
+
+    process import-operations (
+        name: Import Operations
+        type: executeCode
+        source {
+            plsqlCode:
+                ```plsql
+                DECLARE
+                    l_blob BLOB;
+                    l_name VARCHAR2(400);
+                    l_msg  VARCHAR2(4000);
+                BEGIN
+                    IF :P5_OPERATIONS_FILE IS NULL THEN
+                        apex_error.add_error(p_message => 'Choose the PlanetTogether Operations export (.xlsx) first.',
+                                             p_display_location => apex_error.c_inline_in_notification);
+                        RETURN;
+                    END IF;
+                    SELECT blob_content, filename INTO l_blob, l_name
+                      FROM apex_application_temp_files
+                     WHERE name = :P5_OPERATIONS_FILE;
+                    -- Replaces PlanetTogether's rows in PT_JOB_OPERATIONS, keeps rows added by hand (see db/pt_import.sql).
+                    pt_import.import_xlsx('PT_JOB_OPERATIONS', l_blob, l_name, l_msg);
+                    apex_application.g_print_success_message := apex_escape.html(l_msg);
+                EXCEPTION
+                    WHEN OTHERS THEN
+                        apex_error.add_error(p_message => regexp_replace(sqlerrm, '^ORA-[0-9]+: ', ''),
+                                             p_display_location => apex_error.c_inline_in_notification);
+                END;
+                ```
+        }
+        execution {
+            sequence: 15
+        }
+        serverSideCondition {
+            whenButtonPressed: @import-operations
+        }
+    )
+
     region pt-jobs (
         name: Jobs
         type: interactiveGrid
