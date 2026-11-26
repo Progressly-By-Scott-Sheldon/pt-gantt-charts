@@ -61,6 +61,7 @@ page 4 (
                              'plant'  VALUE (SELECT MAX(plant_name) FROM pt_resources),
                              'loaded' VALUE (SELECT TO_CHAR(MAX(loaded_on), 'YYYY-MM-DD"T"HH24:MI') FROM pt_activities),
                              'acts'   VALUE (SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                                         'id' VALUE activity_id,
                                          'proj' VALUE project_name, 'projSort' VALUE project_sort,
                                          'job' VALUE job_name, 'jobId' VALUE job_external_id,
                                          'product' VALUE job_product, 'qty' VALUE job_quantity,
@@ -72,7 +73,7 @@ page 4 (
                                          'need' VALUE TO_CHAR(need_date, 'YYYY-MM-DD"T"HH24:MI'),
                                          'late' VALUE CASE is_late WHEN 'Y' THEN 'true' ELSE 'false' END FORMAT JSON,
                                          'setupMin' VALUE setup_minutes, 'runMin' VALUE run_minutes)
-                                       ORDER BY scheduled_start, job_external_id, operation_external_id, resource_name
+                                       ORDER BY project_sort, scheduled_start, job_external_id, operation_external_id, resource_name
                                        RETURNING CLOB)
                                        FROM pt_activities_v)
                              RETURNING CLOB)

@@ -32,42 +32,50 @@ test("parseDuration: HH:mm:ss and d.HH:mm:ss", () => {
   assert.equal(P.parseDuration("x"), null);
 });
 
-test("dataset counts match the acceptance check", () => {
-  assert.equal(A.length, 36);
-  assert.equal(new Set(A.map(a => a.proj)).size, 4);
-  assert.equal(new Set(A.map(a => a.jobId)).size, 5);
-  assert.equal(new Set(A.map(a => a.jobId + "|" + a.opId)).size, 32);
-  assert.equal(new Set(A.map(a => a.res)).size, 14);
-  assert.equal(new Set(A.filter(a => a.late).map(a => a.jobId)).size, 3);
+test("dataset counts: 36 activities, each under Project1 and Project2 (PT_JOBS notes)", () => {
+  const U = P.uniqueActs(A);
+  assert.equal(A.length, 72);
+  assert.equal(U.length, 36);
+  assert.deepEqual([...new Set(A.map(a => a.proj))], ["Project1", "Project2"]);
+  assert.equal(new Set(U.map(a => a.jobId)).size, 5);
+  assert.equal(new Set(U.map(a => a.jobId + "|" + a.opId)).size, 32);
+  assert.equal(new Set(U.map(a => a.res)).size, 14);
+  assert.equal(new Set(U.filter(a => a.late).map(a => a.jobId)).size, 3);
+  const F = F0(); F.proj.add("Project1");
+  assert.equal(A.filter(a => P.pass(a, F, 3)).length, 36);
+});
+
+test("uniqueActs keeps one row per activity id", () => {
+  const rows = [{ id: 1, proj: "Project1" }, { id: 1, proj: "Project2" }, { id: 2, proj: "Project2" }, { proj: "x" }, { proj: "y" }];
+  assert.deepEqual(P.uniqueActs(rows).map(r => r.proj), ["Project1", "Project2", "x", "y"]);
 });
 
 test("cascading filters: project limits jobs; pruned selections are dropped", () => {
-  const projects = [...new Set(A.map(a => a.proj))];
+  const t = Date.UTC(2026, 0, 5);
+  const mk = (proj, jobId, op) => ({ proj, jobId, job: jobId, op, opId: "Op010", s: t, e: t + 3600e3 });
+  const S = [mk("Project1", "J1", "Cut"), mk("Project1", "J2", "Bend"), mk("Project2", "J3", "Weld"), mk("Project2", "J1", "Cut")];
   const F = F0();
-  F.proj.add("Superheater Coil");
-  let opt = P.filterOptions(A, F, projects);
-  assert.deepEqual(opt.job.map(o => o[0]).sort(), ["JOB-26049", "JOB-26050"]);
-  assert.equal(A.filter(a => P.pass(a, F, 3)).length, 9);
-  // pick a job and an operation of it, then switch project: both must be pruned
-  F.job.add("JOB-26050");
-  F.op.add("TIG Connection Welding");
-  opt = P.filterOptions(A, F, projects);
-  assert.ok(opt.op.some(o => o[0] === "TIG Connection Welding"));
-  assert.ok(!opt.op.some(o => o[0] === "Cut Superheater Tube Lengths"), "ops limited to the selected job");
-  F.proj.clear(); F.proj.add("Boiler Piping Spool");
-  P.filterOptions(A, F, projects);
+  F.proj.add("Project2");
+  let opt = P.filterOptions(S, F, ["Project1", "Project2"]);
+  assert.deepEqual(opt.job.map(o => o[0]).sort(), ["J1", "J3"]);
+  F.job.add("J3"); F.op.add("Weld");
+  opt = P.filterOptions(S, F, ["Project1", "Project2"]);
+  assert.deepEqual(opt.op.map(o => o[0]), ["Weld"], "ops limited to the selected job");
+  F.proj.clear(); F.proj.add("Project1");
+  P.filterOptions(S, F, ["Project1", "Project2"]);
   assert.equal(F.job.size, 0);
   assert.equal(F.op.size, 0);
 });
 
 test("groupOperations: one bar per operation, resources joined with +", () => {
-  const ja = A.filter(a => a.jobId === "JOB-26050");
+  const ja = A.filter(a => a.jobId === "JOB-26050" && a.proj === "Project1");
   const ops = P.groupOperations(ja);
   const tig = ops.find(o => o.opId === "Op010");
   assert.deepEqual(tig.res.sort(), ["TIG Cell 01", "Welder 1"]);
   assert.match(tig.label, /^(TIG Cell 01 \+ Welder 1|Welder 1 \+ TIG Cell 01)$/);
-  const all = new Set(A.map(a => a.jobId + "|" + a.opId)).size;
-  const grouped = [...new Set(A.map(a => a.jobId))].reduce((n, j) => n + P.groupOperations(A.filter(a => a.jobId === j)).length, 0);
+  const U = A.filter(a => a.proj === "Project1");
+  const all = new Set(U.map(a => a.jobId + "|" + a.opId)).size;
+  const grouped = [...new Set(U.map(a => a.jobId))].reduce((n, j) => n + P.groupOperations(U.filter(a => a.jobId === j)).length, 0);
   assert.equal(grouped, all);
 });
 

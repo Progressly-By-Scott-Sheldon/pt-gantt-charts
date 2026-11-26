@@ -48,7 +48,7 @@
     '<div class="legend" data-r="legend"></div>' +
     '<div class="board" data-r="board"><div class="inner" data-r="inner"></div></div>' +
     '<p class="note">Bars run from Scheduled Start to Scheduled End, so they include setup and any off-shift or weekend time the activity spans. ' +
-      'A red end cap marks an activity PlanetTogether flags as late against its need date. Jobs are grouped into projects by PT_JOB_PROJECTS.</p>' +
+      'A red end cap marks an activity PlanetTogether flags as late against its need date. Projects come from the PT_JOBS Notes column (Project1_Job035 shows as Project1); a job linked to several projects appears under each. Hover a project to see its jobs.</p>' +
     '<div class="tip" role="tooltip" data-r="tip"></div>';
   var $ = function (r) { return root.querySelector('[data-r="' + r + '"]'); };
   if (window.apex && apex.util && apex.util.makeApplicationUrl) $("edit").href = apex.util.makeApplicationUrl({ pageId: 5 });
@@ -78,19 +78,20 @@
         return '<label for="ptg-f-' + k + '-' + i + '"><input type="checkbox" id="ptg-f-' + k + '-' + i + '" value="' + esc(o[0]) + '"' + (set.has(o[0]) ? " checked" : "") + '>' + esc(o[1]) + '</label>';
       }).join("");
     });
-    var n = visible().length;
-    $("count").textContent = n === A.length ? "" : n + " of " + A.length + " activities shown";
+    var n = P.uniqueActs(visible()).length, N = P.uniqueActs(A).length;
+    $("count").textContent = n === N ? "" : n + " of " + N + " activities shown";
     $("clear").hidden = !(F.proj.size || F.job.size || F.op.size);
   }
 
   (function headerNumbers() {
-    var jobs = P.uniq(A.map(function (a) { return a.jobId; })), res = P.uniq(A.map(function (a) { return a.res; }));
-    var ops = new Set(A.map(function (a) { return a.jobId + "\u0000" + a.opId; })).size;
-    var lateJobs = new Set(A.filter(function (a) { return a.late; }).map(function (a) { return a.jobId; })).size;
+    var U = P.uniqueActs(A);
+    var jobs = P.uniq(U.map(function (a) { return a.jobId; })), res = P.uniq(U.map(function (a) { return a.res; }));
+    var ops = new Set(U.map(function (a) { return a.jobId + "\u0000" + a.opId; })).size;
+    var lateJobs = new Set(U.filter(function (a) { return a.late; }).map(function (a) { return a.jobId; })).size;
     $("sub").textContent = (DATA.plant ? DATA.plant + " · " : "") + "scheduled " + P.fDY(mn(A, "s")) + " to " + P.fDY(mx(A, "e")) +
       (DATA.loaded ? " · loaded " + P.fDY(P.parseDate(DATA.loaded)) : "");
     $("stats").innerHTML = "<div><b>" + PROJECTS.length + "</b>projects</div><div><b>" + jobs.length + "</b>jobs</div><div><b>" + ops +
-      "</b>operations</div><div><b>" + A.length + "</b>resource activities</div><div><b>" + res.length + "</b>resources</div>" +
+      "</b>operations</div><div><b>" + U.length + "</b>resource activities</div><div><b>" + res.length + "</b>resources</div>" +
       '<div class="crit"><b>' + lateJobs + "</b>jobs late against need date</div>";
   })();
 
@@ -167,8 +168,10 @@
       var ps = mn(pa, "s"), pe = mx(pa, "e"), jobs = P.uniq(pa.map(function (a) { return a.jobId; }));
       var x = scale.x(ps), w = scale.x(pe) - x;
       var pl = Math.max.apply(null, [0].concat(jobs.map(function (j) { return P.jobLateness(pa.filter(function (a) { return a.jobId === j; })); })));
-      var pi = tipOf({ t: p, late: pl > 0, rows: [["Jobs", jobs.join(", ")], ["Start", fDT(ps)], ["End", fDT(pe)], ["Span", dur(pe - ps)]].concat(pl > 0 ? [["Late by", dur(pl)]] : []) });
-      out += '<div class="row p"><div class="lc"><span class="sw ' + pc(p) + '"></span><span class="t">' + esc(p) + "</span>" +
+      // Hover on the project (label or bar) names the jobs it holds.
+      var jobRows = jobs.map(function (j) { var a = pa.find(function (x) { return x.jobId === j; }); return [j, a.job || a.product || ""]; });
+      var pi = tipOf({ t: p, late: pl > 0, rows: jobRows.concat([["Start", fDT(ps)], ["End", fDT(pe)], ["Span", dur(pe - ps)]]).concat(pl > 0 ? [["Late by", dur(pl)]] : []) });
+      out += '<div class="row p"><div class="lc"><span class="sw ' + pc(p) + '"></span><span class="t ptg-proj" data-i="' + pi + '" tabindex="0">' + esc(p) + "</span>" +
         (pl > 0 ? '<span class="pill">LATE ' + dur(pl) + "</span>" : "") + '</div><div class="tc" style="width:' + TW + 'px">' +
         '<div class="psum" style="left:' + x + "px;width:" + w + 'px" data-i="' + pi + '" tabindex="0" aria-label="' + esc(p) + '"></div>' +
         '<span class="bl" style="left:' + (x + w + 9) + 'px"><small>' + jobs.length + " job" + (jobs.length > 1 ? "s" : "") + " · " + fD(ps) + " → " + fD(pe) + "</small></span></div></div>";
@@ -198,7 +201,7 @@
   function resourceRows(acts) {
     var out = "", TW = scale.W + PAD;
     DEPTS.forEach(function (d) {
-      var da = acts.filter(function (a) { return a.dept === d; });
+      var da = P.uniqueActs(acts).filter(function (a) { return a.dept === d; });
       if (!da.length) return;
       var rs = P.uniq(da.map(function (a) { return a.res; }));
       out += '<div class="row p"><div class="lc"><span class="t">' + esc(d) + '</span></div><div class="tc" style="width:' + TW + 'px"><span class="bl" style="left:8px"><small>' +

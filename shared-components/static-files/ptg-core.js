@@ -143,11 +143,22 @@
     return { days: w.segs.reduce(function (n, g) { return n + (g.e - g.s) / DAY; }, 0), breaks: Math.max(0, w.segs.length - 1) };
   }
 
+  /* A job can belong to several projects, so the same activity can arrive once per project.
+   * Keeps the first row of each activity id (rows without an id are all kept). */
+  function uniqueActs(acts) {
+    var seen = new Set();
+    return acts.filter(function (a) {
+      if (a.id == null) return true;
+      if (seen.has(a.id)) return false;
+      seen.add(a.id); return true;
+    });
+  }
+
   /* Rows from the database (strings) -> activities the screen works with. */
   function fromRows(rows) {
     return rows.map(function (r) {
       return {
-        proj: r.proj, projSort: r.projSort, job: r.job, jobId: r.jobId, product: r.product, qty: r.qty,
+        id: r.id, proj: r.proj, projSort: r.projSort, job: r.job, jobId: r.jobId, product: r.product, qty: r.qty,
         op: r.op, opId: r.opId, dept: r.dept, res: r.res, status: r.status,
         s: parseDate(r.s), e: parseDate(r.e), need: parseDate(r.need), late: !!r.late,
         setupMin: r.setupMin, runMin: r.runMin
@@ -159,6 +170,6 @@
     DAY: DAY, HR: HR, BRK: BRK, MON: MON, DOW: DOW,
     parseDate: parseDate, parseDuration: parseDuration, fD: fD, fDY: fDY, fDT: fDT, dur: dur, hm: hm, p2: p2, uniq: uniq,
     pass: pass, filterOptions: filterOptions, groupOperations: groupOperations, jobLateness: jobLateness,
-    makeScale: makeScale, extent: extent, fromRows: fromRows
+    makeScale: makeScale, extent: extent, fromRows: fromRows, uniqueActs: uniqueActs
   };
 });

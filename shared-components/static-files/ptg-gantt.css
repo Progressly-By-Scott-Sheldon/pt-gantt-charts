@@ -100,3 +100,4 @@
 .ptg a.btn{text-decoration:none;display:inline-block}
 .ptg .empty{padding:24px;color:var(--ink2)}
 @media (max-width:640px){.ptg{--lw:168px}.ptg .row.o .lc{padding-left:30px}.ptg .row.j .lc,.ptg .row.r .lc{padding-left:16px}}
+.ptg .ptg-proj{cursor:help;text-decoration:underline dotted;text-underline-offset:3px}
