@@ -46,15 +46,12 @@ page 5 (
         }
         appearance {
             template: @/standard
-            templateOptions: [
-                #DEFAULT#
-                t-Region--scrollBody
-            ]
+            templateOptions: #DEFAULT#
         }
         headerAndFooter {
             headerText:
                 ```html
-                <style>.sd-info{float:right;position:relative;margin:8px 4px 0 16px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid currentColor;color:var(--ut-component-text-muted-color,#6b6b6b);font:italic 600 13px/1 Georgia,serif;cursor:help;z-index:5}.sd-info:hover,.sd-info:focus-visible{color:var(--ut-palette-primary,#0572ce);outline:none}.sd-info .sd-pop{display:none;position:absolute;top:calc(100% + 8px);right:-6px;width:min(460px,85vw);padding:10px 12px;border-radius:8px;background:var(--ut-component-background-color,#fff);color:var(--ut-body-text-color,#262626);border:1px solid var(--ut-component-border-color,#ddd);box-shadow:0 6px 24px rgba(0,0,0,.18);font:400 13px/1.5 var(--a-base-font-family,inherit);font-style:normal;text-align:left}.sd-info .sd-pop p{margin:0 0 8px}.sd-info .sd-pop p:last-child{margin:0}.sd-info:hover .sd-pop,.sd-info:focus .sd-pop{display:block}</style><span class="sd-info" tabindex="0" role="button" aria-label="About jobs">i<span class="sd-pop" role="tooltip"><p>Upload the PlanetTogether Jobs export (.xlsx) to replace PlanetTogether's jobs below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p><p>One row per job. Project groups the jobs on the Schedule Gantt (for example Project 1). Add the job here first, then its operations below. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p></span></span>
+                <style>.t-Region:has(.sd-info){position:relative}.t-Region:has(.sd-info) .t-Region-body .row{align-items:center}.sd-info{position:absolute;top:14px;right:16px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid currentColor;color:var(--ut-component-text-muted-color,#6b6b6b);font:italic 600 13px/1 Georgia,serif;cursor:help;z-index:20}.sd-info:hover,.sd-info:focus-visible{color:var(--ut-palette-primary,#0572ce);outline:none}.sd-info .sd-pop{display:none;position:absolute;top:calc(100% + 8px);right:-8px;width:min(460px,85vw);padding:10px 12px;border-radius:8px;background:var(--ut-component-background-color,#fff);color:var(--ut-body-text-color,#262626);border:1px solid var(--ut-component-border-color,#ddd);box-shadow:0 6px 24px rgba(0,0,0,.18);font-family:inherit;font-size:13px;font-weight:400;font-style:normal;line-height:1.5;text-align:left;z-index:1000}.sd-info .sd-pop p{margin:0 0 8px}.sd-info .sd-pop p:last-child{margin:0}.sd-info:hover .sd-pop,.sd-info:focus .sd-pop{display:block}</style><span class="sd-info" tabindex="0" role="button" aria-label="About jobs">i<span class="sd-pop" role="tooltip"><p>Upload the PlanetTogether Jobs export (.xlsx) to replace PlanetTogether's jobs below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p><p>One row per job. Project groups the jobs on the Schedule Gantt (for example Project 1). Add the job here first, then its operations below. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p></span></span>
                 ```
         }
     )
@@ -77,7 +74,7 @@ page 5 (
             columnSpan: 6
         }
         appearance {
-            template: @/optional
+            template: @/hidden
             templateOptions: [
                 #DEFAULT#
                 t-Form-fieldContainer--stretchInputs
@@ -154,10 +151,7 @@ page 5 (
         }
         appearance {
             template: @/standard
-            templateOptions: [
-                #DEFAULT#
-                t-Region--scrollBody
-            ]
+            templateOptions: #DEFAULT#
         }
         headerAndFooter {
             headerText:
@@ -185,7 +179,7 @@ page 5 (
             columnSpan: 6
         }
         appearance {
-            template: @/optional
+            template: @/hidden
             templateOptions: [
                 #DEFAULT#
                 t-Form-fieldContainer--stretchInputs
