@@ -54,7 +54,7 @@ page 5 (
         headerAndFooter {
             headerText:
                 ```html
-                <p class="u-color-text-muted margin-bottom-sm">Upload the PlanetTogether Jobs export (.xlsx) to replace PlanetTogether's jobs below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p>
+                <style>.sd-info{float:right;position:relative;margin:8px 4px 0 16px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid currentColor;color:var(--ut-component-text-muted-color,#6b6b6b);font:italic 600 13px/1 Georgia,serif;cursor:help;z-index:5}.sd-info:hover,.sd-info:focus-visible{color:var(--ut-palette-primary,#0572ce);outline:none}.sd-info .sd-pop{display:none;position:absolute;top:calc(100% + 8px);right:-6px;width:min(460px,85vw);padding:10px 12px;border-radius:8px;background:var(--ut-component-background-color,#fff);color:var(--ut-body-text-color,#262626);border:1px solid var(--ut-component-border-color,#ddd);box-shadow:0 6px 24px rgba(0,0,0,.18);font:400 13px/1.5 var(--a-base-font-family,inherit);font-style:normal;text-align:left}.sd-info .sd-pop p{margin:0 0 8px}.sd-info .sd-pop p:last-child{margin:0}.sd-info:hover .sd-pop,.sd-info:focus .sd-pop{display:block}</style><span class="sd-info" tabindex="0" role="button" aria-label="About jobs">i<span class="sd-pop" role="tooltip"><p>Upload the PlanetTogether Jobs export (.xlsx) to replace PlanetTogether's jobs below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p><p>One row per job. Project groups the jobs on the Schedule Gantt (for example Project 1). Add the job here first, then its operations below. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p></span></span>
                 ```
         }
     )
@@ -77,7 +77,7 @@ page 5 (
             columnSpan: 6
         }
         appearance {
-            template: @/optional-above
+            template: @/optional
             templateOptions: [
                 #DEFAULT#
                 t-Form-fieldContainer--stretchInputs
@@ -100,7 +100,6 @@ page 5 (
             templateOptions: [
                 #DEFAULT#
                 t-Button--iconLeft
-                t-Button--padTop
             ]
             icon: fa-upload
         }
@@ -163,7 +162,7 @@ page 5 (
         headerAndFooter {
             headerText:
                 ```html
-                <p class="u-color-text-muted margin-bottom-sm">Upload the PlanetTogether Operations export (.xlsx) to replace PlanetTogether's operations below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p>
+                <span class="sd-info" tabindex="0" role="button" aria-label="About operations">i<span class="sd-pop" role="tooltip"><p>Upload the PlanetTogether Operations export (.xlsx) to replace PlanetTogether's operations below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p><p>One row per operation: each is a bar on the Schedule Gantt. Name is the operation (Cutting, Bending ...), External ID its sequence (Op010, Op020 ...). Pick one or more resources. Late is worked out from Scheduled End and Need Date when you save. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p></span></span>
                 ```
         }
     )
@@ -186,7 +185,7 @@ page 5 (
             columnSpan: 6
         }
         appearance {
-            template: @/optional-above
+            template: @/optional
             templateOptions: [
                 #DEFAULT#
                 t-Form-fieldContainer--stretchInputs
@@ -209,7 +208,6 @@ page 5 (
             templateOptions: [
                 #DEFAULT#
                 t-Button--iconLeft
-                t-Button--padTop
             ]
             icon: fa-upload
         }
@@ -269,12 +267,6 @@ page 5 (
         appearance {
             template: @/interactive-report
             templateOptions: #DEFAULT#
-        }
-        headerAndFooter {
-            headerText:
-                ```html
-                <p class="u-color-text-muted margin-bottom-sm">One row per job. Project groups the jobs on the Schedule Gantt (for example Project 1). Add the job here first, then its operations below. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p>
-                ```
         }
         edit {
             enabled: true
@@ -530,12 +522,6 @@ page 5 (
         appearance {
             template: @/interactive-report
             templateOptions: #DEFAULT#
-        }
-        headerAndFooter {
-            headerText:
-                ```html
-                <p class="u-color-text-muted margin-bottom-sm">One row per operation: each is a bar on the Schedule Gantt. Name is the operation (Cutting, Bending ...), External ID its sequence (Op010, Op020 ...). Pick one or more resources. Late is worked out from Scheduled End and Need Date when you save. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p>
-                ```
         }
         edit {
             enabled: true
