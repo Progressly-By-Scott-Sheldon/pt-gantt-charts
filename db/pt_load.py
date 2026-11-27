@@ -9,7 +9,7 @@
                    Scheduled Start / End, Need Date, Late, ResourcesUsed ...
 
 Writes, next to this script:
-  pt_jobs_load.sql            replaces PlanetTogether's rows in PT_JOBS (pages 2-5 read it)
+  pt_jobs_load.sql            replaces PlanetTogether's rows in PT_JOBS (pages 4-5 read it)
   pt_job_operations_load.sql  creates PT_JOB_OPERATIONS if needed, replaces PlanetTogether's rows
 
 Rows users added on page 5 (INSTANCEID = 'MANUAL') are kept.

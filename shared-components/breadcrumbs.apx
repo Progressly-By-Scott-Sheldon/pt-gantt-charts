@@ -1,19 +1,6 @@
 breadcrumb breadcrumb (
     name: Breadcrumb
 
-    entry bar-chart (
-        name: Bar chart
-        pageNumber: 3
-        execution {
-            sequence: 10
-        }
-        link {
-            target: {
-                page: 3
-            }
-        }
-    )
-
     entry home (
         name: Home
         pageNumber: 1
@@ -23,19 +10,6 @@ breadcrumb breadcrumb (
         link {
             target: {
                 page: 1
-            }
-        }
-    )
-
-    entry project-jobs-gantt (
-        name: Project - Jobs Gantt
-        pageNumber: 2
-        execution {
-            sequence: 10
-        }
-        link {
-            target: {
-                page: 2
             }
         }
     )

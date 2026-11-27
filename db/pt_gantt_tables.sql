@@ -4,7 +4,7 @@
 --
 -- Hierarchy: project > job (job_external_id) > operation (job + operation_external_id)
 --            > activity (one per resource).
--- PT_JOBS (the PlanetTogether job publish, used by pages 2 and 3) is NOT touched here.
+-- PT_JOBS (the PlanetTogether job publish) is NOT touched here.
 -- PT_JOB_PROJECTS.job_external_id matches PT_JOBS.externalid, without a foreign key,
 -- because PT_JOBS is replaced on every publish.
 --

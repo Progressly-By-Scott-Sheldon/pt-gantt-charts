@@ -62,25 +62,6 @@ list navigation-bar (
 list navigation-menu (
     name: Navigation Menu
 
-    entry bar-chart (
-        label: Bar chart
-        icon {
-            imageIconCssClasses: fa-area-chart
-        }
-        layout {
-            sequence: 30
-        }
-        isCurrent {
-            type: pages
-            pages: 3
-        }
-        link {
-            target: {
-                page: 3
-            }
-        }
-    )
-
     entry home (
         label: Home
         icon {
@@ -92,25 +73,6 @@ list navigation-menu (
         link {
             target: {
                 page: 1
-            }
-        }
-    )
-
-    entry project-jobs-gantt (
-        label: Project - Jobs Gantt
-        icon {
-            imageIconCssClasses: fa-area-chart
-        }
-        layout {
-            sequence: 20
-        }
-        isCurrent {
-            type: pages
-            pages: 2
-        }
-        link {
-            target: {
-                page: 2
             }
         }
     )
