@@ -46,12 +46,16 @@ page 5 (
         }
         appearance {
             template: @/standard
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Region--hideHeader
+                js-addHiddenHeadingRoleDesc
+            ]
         }
         headerAndFooter {
             headerText:
                 ```html
-                <style>.t-Region:has(.sd-info){position:relative}.t-Region:has(.sd-info) .t-Region-body .row{align-items:center}.sd-info{position:absolute;top:14px;right:16px;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid currentColor;color:var(--ut-component-text-muted-color,#6b6b6b);font:italic 600 13px/1 Georgia,serif;cursor:help;z-index:20}.sd-info:hover,.sd-info:focus-visible{color:var(--ut-palette-primary,#0572ce);outline:none}.sd-info .sd-pop{display:none;position:absolute;top:calc(100% + 8px);right:-8px;width:min(460px,85vw);padding:10px 12px;border-radius:8px;background:var(--ut-component-background-color,#fff);color:var(--ut-body-text-color,#262626);border:1px solid var(--ut-component-border-color,#ddd);box-shadow:0 6px 24px rgba(0,0,0,.18);font-family:inherit;font-size:13px;font-weight:400;font-style:normal;line-height:1.5;text-align:left;z-index:1000}.sd-info .sd-pop p{margin:0 0 8px}.sd-info .sd-pop p:last-child{margin:0}.sd-info:hover .sd-pop,.sd-info:focus .sd-pop{display:block}</style><span class="sd-info" tabindex="0" role="button" aria-label="About jobs">i<span class="sd-pop" role="tooltip"><p>Upload the PlanetTogether Jobs export (.xlsx) to replace PlanetTogether's jobs below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p><p>One row per job. Project groups the jobs on the Schedule Gantt (for example Project 1). Add the job here first, then its operations below. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p></span></span>
+                <style>.t-Region:has(.sd-info) .t-Region-body{display:flex;align-items:center;gap:20px;padding:12px 16px}.t-Region:has(.sd-info) .sd-title{order:0;flex:none;min-width:190px;font-size:1.125rem;font-weight:600;white-space:nowrap}.t-Region:has(.sd-info) .t-Region-body>.container{order:1;flex:1 1 auto;min-width:0}.t-Region:has(.sd-info) .row{display:flex;flex-wrap:nowrap;align-items:center;gap:12px;margin:0}.t-Region:has(.sd-info) .row>[class*="col"]{flex:none;width:auto;max-width:none;padding:0}.t-Region:has(.sd-info) .row>[class*="col"]:first-child{flex:1 1 auto;max-width:620px}.t-Region:has(.sd-info) .t-Form-fieldContainer{margin:0;padding:0}.t-Region:has(.sd-info) .t-Form-labelContainer{display:none}.t-Region:has(.sd-info) .t-Form-inputContainer{width:100%;max-width:none;padding:0}.t-Region:has(.sd-info) .t-Button{margin:0;white-space:nowrap}.sd-info{order:2;position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;border:1px solid currentColor;color:var(--ut-component-text-muted-color,#6b6b6b);font:italic 600 13px/1 Georgia,serif;cursor:help;z-index:20}.sd-info:hover,.sd-info:focus-visible{color:var(--ut-palette-primary,#0572ce);outline:none}.sd-info .sd-pop{display:none;position:absolute;top:calc(100% + 8px);right:-8px;width:min(460px,85vw);padding:10px 12px;border-radius:8px;background:var(--ut-component-background-color,#fff);color:var(--ut-body-text-color,#262626);border:1px solid var(--ut-component-border-color,#ddd);box-shadow:0 6px 24px rgba(0,0,0,.18);font-family:inherit;font-size:13px;font-weight:400;font-style:normal;line-height:1.5;text-align:left;z-index:1000}.sd-info .sd-pop p{margin:0 0 8px}.sd-info .sd-pop p:last-child{margin:0}.sd-info:hover .sd-pop,.sd-info:focus .sd-pop{display:block}</style><span class="sd-title" aria-hidden="true">Import Jobs</span><span class="sd-info" tabindex="0" role="button" aria-label="About jobs">i<span class="sd-pop" role="tooltip"><p>Upload the PlanetTogether Jobs export (.xlsx) to replace PlanetTogether's jobs below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p><p>One row per job. Project groups the jobs on the Schedule Gantt (for example Project 1). Add the job here first, then its operations below. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p></span></span>
                 ```
         }
     )
@@ -151,12 +155,16 @@ page 5 (
         }
         appearance {
             template: @/standard
-            templateOptions: #DEFAULT#
+            templateOptions: [
+                #DEFAULT#
+                t-Region--hideHeader
+                js-addHiddenHeadingRoleDesc
+            ]
         }
         headerAndFooter {
             headerText:
                 ```html
-                <span class="sd-info" tabindex="0" role="button" aria-label="About operations">i<span class="sd-pop" role="tooltip"><p>Upload the PlanetTogether Operations export (.xlsx) to replace PlanetTogether's operations below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p><p>One row per operation: each is a bar on the Schedule Gantt. Name is the operation (Cutting, Bending ...), External ID its sequence (Op010, Op020 ...). Pick one or more resources. Late is worked out from Scheduled End and Need Date when you save. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p></span></span>
+                <span class="sd-title" aria-hidden="true">Import Operations</span><span class="sd-info" tabindex="0" role="button" aria-label="About operations">i<span class="sd-pop" role="tooltip"><p>Upload the PlanetTogether Operations export (.xlsx) to replace PlanetTogether's operations below. Rows you added by hand are kept. Only the columns the Gantt needs are shown; the rest are stored as they are.</p><p>One row per operation: each is a bar on the Schedule Gantt. Name is the operation (Cutting, Bending ...), External ID its sequence (Op010, Op020 ...). Pick one or more resources. Late is worked out from Scheduled End and Need Date when you save. Rows you add are kept when a new PlanetTogether export is loaded; changes to rows that came from PlanetTogether are replaced by the next load.</p></span></span>
                 ```
         }
     )
