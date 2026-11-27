@@ -28,9 +28,9 @@
         '<button type="button" data-v="resource" aria-pressed="false">By resource</button></div>' +
       '<span data-r="ganttctl" style="display:contents">' +
         '<div class="seg" role="group" aria-label="Zoom">' +
-          '<button type="button" data-z="out" title="Zoom out" aria-label="Zoom out">−</button>' +
+          '<button type="button" data-z="out" title="Zoom out (or Ctrl + scroll / pinch)" aria-label="Zoom out">−</button>' +
           '<button type="button" data-z="fit" aria-label="Fit to screen">Fit</button>' +
-          '<button type="button" data-z="in" title="Zoom in" aria-label="Zoom in">+</button></div>' +
+          '<button type="button" data-z="in" title="Zoom in (or Ctrl + scroll / pinch)" aria-label="Zoom in">+</button></div>' +
         '<label class="chk"><input type="checkbox" data-r="compress" checked> Hide idle gaps</label>' +
         '<span data-r="lvlwrap" style="display:contents"><span class="flab" id="ptg-lvl">Show down to</span>' +
           '<div class="seg" role="group" aria-labelledby="ptg-lvl">' +
@@ -48,7 +48,7 @@
     '<div class="legend" data-r="legend"></div>' +
     '<div class="board" data-r="board"><div class="inner" data-r="inner"></div></div>' +
     '<p class="note">Bars run from Scheduled Start to Scheduled End, so they include setup and any off-shift or weekend time the activity spans. ' +
-      'A red end cap marks an activity PlanetTogether flags as late against its need date. Jobs, projects (Notes) and products come from the PlanetTogether Jobs publish (PT_JOBS); each bar is an operation from the Operations publish (PT_JOB_OPERATIONS), labelled with its Name and External ID. An operation on two resources shows on both. Hover a project to see its jobs.</p>' +
+      'A red end cap marks an activity PlanetTogether flags as late against its need date. Jobs, projects (Notes) and products come from the PlanetTogether Jobs publish (PT_JOBS); each bar is an operation from the Operations publish (PT_JOB_OPERATIONS), labelled with its Name and External ID. An operation on two resources shows on both. Hover a project to see its jobs. Zoom with the − / + buttons, Ctrl (⌘ on Mac) + mouse wheel, or a trackpad pinch.</p>' +
     '<div class="tip" role="tooltip" data-r="tip"></div>';
   var $ = function (r) { return root.querySelector('[data-r="' + r + '"]'); };
   if (window.apex && apex.util && apex.util.makeApplicationUrl) $("edit").href = apex.util.makeApplicationUrl({ pageId: 5 });
@@ -236,14 +236,50 @@
     state.ppd = Math.max(4, ($("board").clientWidth - lw - t.breaks * BRK - 230) / Math.max(1, t.days));
     render();
   }
+  var PPD_MIN = 2, PPD_MAX = 1600;
+  /* Zoom to ppd keeping the time under board x-offset `ax` (px from the board's left edge) in place. */
+  function zoomTo(ppd, ax) {
+    ppd = Math.min(PPD_MAX, Math.max(PPD_MIN, ppd));
+    if (Math.abs(ppd - state.ppd) < 1e-6) return;
+    var board = $("board"), lw = parseFloat(getComputedStyle(root).getPropertyValue("--lw")) || 290;
+    if (ax == null) ax = lw + (board.clientWidth - lw) / 2;
+    var t = scale.t(board.scrollLeft + ax - lw);
+    state.ppd = ppd;
+    render();
+    board.scrollLeft = scale.x(t) + lw - ax;
+  }
   root.querySelectorAll("[data-z]").forEach(function (b) {
     b.onclick = function () {
       var z = b.dataset.z;
       if (z === "fit") return fit();
-      if (z === "in") state.ppd = ZOOMS.find(function (v) { return v > state.ppd * 1.05; }) || state.ppd;
-      else state.ppd = ZOOMS.slice().reverse().find(function (v) { return v < state.ppd / 1.05; }) || state.ppd;
-      render();
+      if (z === "in") zoomTo(ZOOMS.find(function (v) { return v > state.ppd * 1.05; }) || state.ppd);
+      else zoomTo(ZOOMS.slice().reverse().find(function (v) { return v < state.ppd / 1.05; }) || state.ppd);
     };
+  });
+
+  /* Mouse / trackpad zoom around the pointer: Ctrl (or Cmd) + wheel, and trackpad pinch
+   * (browsers report a pinch as a wheel event with ctrlKey; Safari sends gesture events).
+   * A plain wheel still scrolls; Shift + wheel scrolls sideways. Renders at most once per frame. */
+  var pend = null;
+  function queueZoom(factor, clientX) {
+    var r = $("board").getBoundingClientRect();
+    if (!pend) {
+      pend = { f: 1, ax: 0 };
+      requestAnimationFrame(function () { var p = pend; pend = null; zoomTo(state.ppd * p.f, p.ax); });
+    }
+    pend.f *= factor; pend.ax = clientX - r.left;
+  }
+  $("board").addEventListener("wheel", function (e) {
+    if (!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault();
+    var dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+    queueZoom(Math.exp(-Math.max(-100, Math.min(100, dy)) * 0.006), e.clientX);
+  }, { passive: false });
+  var gScale = 1;
+  $("board").addEventListener("gesturestart", function (e) { e.preventDefault(); gScale = 1; });
+  $("board").addEventListener("gesturechange", function (e) {
+    e.preventDefault();
+    queueZoom(e.scale / gScale, e.clientX); gScale = e.scale;
   });
   $("compress").onchange = function (e) { state.compress = e.target.checked; if (!state.compress) fit(); else { state.ppd = 150; render(); } };
   root.querySelectorAll("[data-v]").forEach(function (b) { b.onclick = function () { state.view = b.dataset.v; render(); }; });

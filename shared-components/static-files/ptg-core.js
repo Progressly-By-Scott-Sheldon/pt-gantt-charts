@@ -102,7 +102,7 @@
     var ppd = opt.ppd, compress = opt.compress;
     var iv = acts.map(function (a) { return [a.s, a.e]; }).sort(function (x, y) { return x[0] - y[0]; });
     var segs = [];
-    if (!iv.length) return { segs: [], W: 0, x: function () { return 0; } };
+    if (!iv.length) return { segs: [], W: 0, x: function () { return 0; }, t: function () { return 0; } };
     if (compress) {
       var cur = iv[0].slice();
       iv.slice(1).forEach(function (p) {
@@ -135,7 +135,16 @@
       }
       return x0;
     };
-    return { segs: segs, W: x0, x: x };
+    /* inverse of x: pixel -> time; a pixel inside a break snaps to the nearer segment edge */
+    var t = function (px) {
+      for (var i = 0; i < segs.length; i++) {
+        var g = segs[i];
+        if (px < g.x0) return px < g.x0 - BRK / 2 && i > 0 ? segs[i - 1].e : g.s;
+        if (px <= g.x0 + g.w) return g.s + (px - g.x0) / ppd * DAY;
+      }
+      return segs[segs.length - 1].e;
+    };
+    return { segs: segs, W: x0, x: x, t: t };
   }
   /* Days shown and number of breaks, independent of zoom (used by Fit). */
   function extent(acts, compress) {

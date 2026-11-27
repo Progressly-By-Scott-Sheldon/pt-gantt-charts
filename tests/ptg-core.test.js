@@ -109,6 +109,19 @@ test("makeScale: idle gaps hidden -> one break of 80 days", () => {
   assert.ok(sc.x(sc.segs[1].s) > sc.x(sc.segs[0].e));
 });
 
+test("makeScale: t is the inverse of x, breaks snap to a segment edge", () => {
+  const sc = P.makeScale(A, { ppd: 10, compress: true });
+  sc.segs.forEach(g => {
+    const mid = g.s + Math.round((g.e - g.s) / 2);
+    assert.equal(sc.t(sc.x(mid)), mid);
+  });
+  const g0 = sc.segs[0], g1 = sc.segs[1];
+  assert.equal(sc.t(g0.x0 + g0.w + 1), g0.e);
+  assert.equal(sc.t(g1.x0 - 1), g1.s);
+  assert.equal(sc.t(-50), g0.s);
+  assert.equal(sc.t(sc.W + 50), sc.segs[sc.segs.length - 1].e);
+});
+
 test("makeScale: without compression, one continuous axis", () => {
   const sc = P.makeScale(A, { ppd: 10, compress: false });
   assert.equal(sc.segs.length, 1);
