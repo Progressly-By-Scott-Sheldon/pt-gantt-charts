@@ -44,11 +44,12 @@
       '<details class="dd" data-f="op"><summary aria-label="Operation filter"></summary><div class="menu" role="group" aria-label="Operations"></div></details>' +
       '<button type="button" class="btn" data-r="clear">Clear filters</button>' +
       '<span class="flab" data-r="count" aria-live="polite"></span>' +
+      '<span class="info" tabindex="0" role="button" aria-label="About this chart" aria-describedby="ptg-about">i' +
+        '<span class="info-pop" role="tooltip" id="ptg-about">Bars run from Scheduled Start to Scheduled End, so they include setup and any off-shift or weekend time the activity spans. ' +
+      'A red end cap marks an activity PlanetTogether flags as late against its need date. Jobs, projects (Notes) and products come from the PlanetTogether Jobs publish (PT_JOBS); each bar is an operation from the Operations publish (PT_JOB_OPERATIONS), labelled with its Name and External ID. An operation on two resources shows on both. Hover a project to see its jobs. Zoom with the − / + buttons, Ctrl (⌘ on Mac) + mouse wheel, or a trackpad pinch.</span></span>' +
       '<a class="btn ptg-edit" data-r="edit" href="#">Add or edit data</a></div>' +
     '<div class="legend" data-r="legend"></div>' +
     '<div class="board" data-r="board"><div class="inner" data-r="inner"></div></div>' +
-    '<p class="note">Bars run from Scheduled Start to Scheduled End, so they include setup and any off-shift or weekend time the activity spans. ' +
-      'A red end cap marks an activity PlanetTogether flags as late against its need date. Jobs, projects (Notes) and products come from the PlanetTogether Jobs publish (PT_JOBS); each bar is an operation from the Operations publish (PT_JOB_OPERATIONS), labelled with its Name and External ID. An operation on two resources shows on both. Hover a project to see its jobs. Zoom with the − / + buttons, Ctrl (⌘ on Mac) + mouse wheel, or a trackpad pinch.</p>' +
     '<div class="tip" role="tooltip" data-r="tip"></div>';
   var $ = function (r) { return root.querySelector('[data-r="' + r + '"]'); };
   if (window.apex && apex.util && apex.util.makeApplicationUrl) $("edit").href = apex.util.makeApplicationUrl({ pageId: 5 });
@@ -67,6 +68,7 @@
   var mx = function (arr, k) { return Math.max.apply(null, arr.map(function (a) { return a[k]; })); };
   var mn = function (arr, k) { return Math.min.apply(null, arr.map(function (a) { return a[k]; })); };
 
+  var OPT = { proj: [], job: [], op: [] };   /* option values currently listed in each filter */
   function buildFilters() {
     var opt = P.filterOptions(A, F, PROJECTS);
     root.querySelectorAll('[data-r="filters"] .dd').forEach(function (d) {
@@ -74,9 +76,12 @@
       var one = set.size === 1 ? opt[k].find(function (o) { return o[0] === Array.from(set)[0]; }) : null;
       sm.textContent = !set.size ? FL[k][0] : one ? one[1] : set.size + " " + FL[k][1];
       sm.classList.toggle("on", set.size > 0);
-      d.querySelector(".menu").innerHTML = opt[k].map(function (o, i) {
-        return '<label for="ptg-f-' + k + '-' + i + '"><input type="checkbox" id="ptg-f-' + k + '-' + i + '" value="' + esc(o[0]) + '"' + (set.has(o[0]) ? " checked" : "") + '>' + esc(o[1]) + '</label>';
-      }).join("");
+      OPT[k] = opt[k].map(function (o) { return o[0]; });
+      d.querySelector(".menu").innerHTML =
+        '<label class="all" for="ptg-f-' + k + '-all"><input type="checkbox" id="ptg-f-' + k + '-all" data-all="1"' + (set.size ? "" : " checked") + '>' + FL[k][0] + '</label>' +
+        opt[k].map(function (o, i) {
+          return '<label for="ptg-f-' + k + '-' + i + '"><input type="checkbox" id="ptg-f-' + k + '-' + i + '" value="' + esc(o[0]) + '"' + (!set.size || set.has(o[0]) ? " checked" : "") + '>' + esc(o[1]) + '</label>';
+        }).join("");
     });
     var n = P.uniqueActs(visible()).length, N = P.uniqueActs(A).length;
     $("count").textContent = n === N ? "" : n + " of " + N + " activities shown";
@@ -286,9 +291,16 @@
   root.querySelectorAll("[data-l]").forEach(function (b) { b.onclick = function () { state.level = b.dataset.l; render(); }; });
   $("filters").addEventListener("change", function (e) {
     var d = e.target.closest(".dd"); if (!d) return;
-    var set = F[d.dataset.f];
-    if (e.target.checked) set.add(e.target.value); else set.delete(e.target.value);
+    var k = d.dataset.f, set = F[k], all = OPT[k], v = e.target.value;
+    /* An empty set means "All". Ticking "All" clears the selection; unticking it changes nothing.
+     * Unticking one item while "All" is on keeps every other item; ticking the last missing item
+     * goes back to "All"; the last ticked item can't be unticked (that would show nothing). */
+    if (e.target.dataset.all) set.clear();
+    else if (e.target.checked) { set.add(v); if (all.every(function (o) { return set.has(o); })) set.clear(); }
+    else if (!set.size) all.forEach(function (o) { if (o !== v) set.add(o); });
+    else if (set.size > 1) set.delete(v);
     fit();
+    d.setAttribute("open", "");
   });
   $("clear").onclick = function () { F.proj.clear(); F.job.clear(); F.op.clear(); fit(); };
   document.addEventListener("click", function (e) {
